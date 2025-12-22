@@ -217,34 +217,45 @@
 //     res.status(400).send(`Webhook Error: ${err.message}`);
 //   }
 // };
+import dotenv from "dotenv";
+dotenv.config(); // MUST be first
+
 import Stripe from "stripe";
 import Booking from "../models/Booking.js";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
-});
+import { inngest } from "../inngest/index.js";
 
 export const stripeWebhooks = async (req, res) => {
-  const sig = req.headers["stripe-signature"];
-
-  let event;
   try {
-    event = stripe.webhooks.constructEvent(
+    // ✅ SAFETY CHECK
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("❌ STRIPE_SECRET_KEY is missing");
+      return res.status(500).send("Stripe secret key missing");
+    }
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.error("❌ STRIPE_WEBHOOK_SECRET is missing");
+      return res.status(500).send("Webhook secret missing");
+    }
+
+    // ✅ CREATE STRIPE *HERE*
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2023-10-16",
+    });
+
+    const sig = req.headers["stripe-signature"];
+    if (!sig) {
+      return res.status(400).send("Missing Stripe signature");
+    }
+
+    const event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-  } catch (err) {
-    console.error("❌ Webhook signature failed:", err.message);
-    return res.status(400).send("Webhook Error");
-  }
 
-  try {
+    // ✅ PAYMENT SUCCESS
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-
-      console.log("🔥 STRIPE METADATA:", session.metadata);
-
       const bookingId = session.metadata?.bookingId;
 
       if (!bookingId) {
@@ -252,21 +263,22 @@ export const stripeWebhooks = async (req, res) => {
         return res.json({ received: true });
       }
 
-      await Booking.findByIdAndUpdate(
-        bookingId,
-        {
-          isPaid: true,
-          paymentLink: "",
-        },
-        { new: true }
-      );
+      await Booking.findByIdAndUpdate(bookingId, {
+        isPaid: true,
+        paymentLink: "",
+      });
 
-      console.log("✅ BOOKING MARKED PAID:", bookingId);
+      await inngest.send({
+        name: "app/show.booked",
+        data: { bookingId },
+      });
+
+      console.log("✅ Booking marked as PAID:", bookingId);
     }
 
     res.json({ received: true });
   } catch (err) {
-    console.error("❌ Webhook processing error:", err);
-    res.status(500).send("Server error");
+    console.error("❌ Stripe webhook error:", err.message);
+    res.status(400).send(`Webhook Error: ${err.message}`);
   }
 };
