@@ -606,15 +606,18 @@ import Movie from "../models/Movie.js";
 /* =====================================================
    ADMIN CHECK (EMAIL BASED – 100% WORKING)
    ===================================================== */
+
 export const isAdmin = async (req, res) => {
   try {
-    const { user } = req.auth();
+    const { userId } = req.auth();
 
-    if (!user) {
+    if (!userId) {
       return res.json({ success: true, isAdmin: false });
     }
 
-    // ✅ Clerk correct email extraction
+    // 🔥 FETCH USER FROM CLERK
+    const user = await clerkClient.users.getUser(userId);
+
     const userEmail = user.emailAddresses?.[0]?.emailAddress;
 
     // 🔐 YOUR ADMIN EMAIL
@@ -622,7 +625,8 @@ export const isAdmin = async (req, res) => {
 
     const isAdmin = userEmail === ADMIN_EMAIL;
 
-    console.log("ADMIN CHECK →", {
+    console.log("ADMIN CHECK:", {
+      userId,
       userEmail,
       isAdmin,
     });
@@ -639,7 +643,6 @@ export const isAdmin = async (req, res) => {
     });
   }
 };
-
 /* =====================================================
    DASHBOARD DATA
    ===================================================== */
