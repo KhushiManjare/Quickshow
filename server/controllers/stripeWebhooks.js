@@ -156,29 +156,85 @@
 // //     res.status(400).send(`Webhook Error: ${err.message}`);
 // //   }
 // // };
+// import dotenv from "dotenv";
+// dotenv.config(); // MUST be first
+
+// import Stripe from "stripe";
+// import Booking from "../models/Booking.js";
+// import { inngest } from "../inngest/index.js";
+
+// let stripe = null; // 🔥 DO NOT initialize at top
+
+// export const stripeWebhooks = async (req, res) => {
+//   try {
+//     // ✅ Lazy init Stripe INSIDE request
+//     if (!stripe) {
+//       if (!process.env.STRIPE_SECRET_KEY) {
+//         console.error("❌ STRIPE_SECRET_KEY missing");
+//         return res.status(500).send("Stripe key missing");
+//       }
+
+//       stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+//         apiVersion: "2023-10-16",
+//       });
+
+//       console.log("✅ Stripe initialized");
+//     }
+
+//     const sig = req.headers["stripe-signature"];
+//     if (!sig) {
+//       return res.status(400).send("Missing Stripe signature");
+//     }
+
+//     const event = stripe.webhooks.constructEvent(
+//       req.body,
+//       sig,
+//       process.env.STRIPE_WEBHOOK_SECRET
+//     );
+
+//     if (event.type === "checkout.session.completed") {
+//       const session = event.data.object;
+//       const bookingId = session.metadata?.bookingId;
+
+//       if (bookingId) {
+//         await Booking.findByIdAndUpdate(bookingId, {
+//           isPaid: true,
+//           paymentLink: "",
+//         });
+
+//         await inngest.send({
+//           name: "app/show.booked",
+//           data: { bookingId },
+//         });
+
+//         console.log("✅ Booking paid:", bookingId);
+//       }
+//     }
+
+//     res.json({ received: true });
+//   } catch (err) {
+//     console.error("❌ Stripe webhook error:", err.message);
+//     res.status(400).send(`Webhook Error: ${err.message}`);
+//   }
+// };
 import dotenv from "dotenv";
-dotenv.config(); // MUST be first
+dotenv.config();
 
 import Stripe from "stripe";
 import Booking from "../models/Booking.js";
+import connectDB from "../configs/db.js";
 import { inngest } from "../inngest/index.js";
 
-let stripe = null; // 🔥 DO NOT initialize at top
+let stripe;
 
 export const stripeWebhooks = async (req, res) => {
-  try {
-    // ✅ Lazy init Stripe INSIDE request
-    if (!stripe) {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        console.error("❌ STRIPE_SECRET_KEY missing");
-        return res.status(500).send("Stripe key missing");
-      }
+  await connectDB(); // ✅ MUST for Vercel
 
+  try {
+    if (!stripe) {
       stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
         apiVersion: "2023-10-16",
       });
-
-      console.log("✅ Stripe initialized");
     }
 
     const sig = req.headers["stripe-signature"];
@@ -207,13 +263,13 @@ export const stripeWebhooks = async (req, res) => {
           data: { bookingId },
         });
 
-        console.log("✅ Booking paid:", bookingId);
+        console.log("✅ Booking marked as PAID:", bookingId);
       }
     }
 
-    res.json({ received: true });
+    return res.json({ received: true });
   } catch (err) {
     console.error("❌ Stripe webhook error:", err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 };
