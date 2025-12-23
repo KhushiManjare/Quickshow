@@ -704,7 +704,6 @@ import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import Stripe from "stripe";
 
-/* ================= STRIPE INSTANCE ================= */
 const getStripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error("STRIPE_SECRET_KEY missing");
@@ -712,51 +711,36 @@ const getStripe = () => {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 };
 
-/* ================= GET OCCUPIED SEATS ================= */
+/* ===== GET OCCUPIED SEATS ===== */
 export const getOccupiedSeats = async (req, res) => {
   try {
     const show = await Show.findById(req.params.showId);
+    if (!show) return res.json({ success: false });
 
-    if (!show) {
-      return res.json({ success: false, message: "Show not found" });
-    }
-
-    return res.json({
+    res.json({
       success: true,
       occupiedSeats: Object.keys(show.occupiedSeats || {}),
     });
-  } catch (err) {
-    console.error("SEATS ERROR:", err);
-    return res.status(500).json({ success: false });
+  } catch {
+    res.status(500).json({ success: false });
   }
 };
 
-/* ================= CREATE BOOKING ================= */
+/* ===== CREATE BOOKING ===== */
 export const createBooking = async (req, res) => {
   try {
     const userId = req.headers["x-clerk-user-id"];
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
+    if (!userId) return res.status(401).json({ success: false });
 
     const { showId, selectedSeats } = req.body;
     const origin = req.headers.origin;
 
-    if (!showId || !selectedSeats?.length) {
-      return res.status(400).json({ success: false });
-    }
-
     const show = await Show.findById(showId).populate("movie");
-    if (!show || !show.movie) {
-      return res.status(404).json({ success: false });
-    }
+    if (!show || !show.movie) return res.json({ success: false });
 
     for (const seat of selectedSeats) {
       if (show.occupiedSeats?.[seat]) {
-        return res.json({
-          success: false,
-          message: "Seat already booked",
-        });
+        return res.json({ success: false, message: "Seat booked" });
       }
     }
 
@@ -770,10 +754,7 @@ export const createBooking = async (req, res) => {
       isPaid: false,
     });
 
-    selectedSeats.forEach((seat) => {
-      show.occupiedSeats[seat] = userId;
-    });
-
+    selectedSeats.forEach((s) => (show.occupiedSeats[s] = userId));
     show.markModified("occupiedSeats");
     await show.save();
 
@@ -786,9 +767,7 @@ export const createBooking = async (req, res) => {
         {
           price_data: {
             currency: "inr",
-            product_data: {
-              name: show.movie.title,
-            },
+            product_data: { name: show.movie.title },
             unit_amount: amount * 100,
           },
           quantity: 1,
@@ -796,17 +775,15 @@ export const createBooking = async (req, res) => {
       ],
       success_url: `${origin}/my-bookings`,
       cancel_url: `${origin}/my-bookings`,
-      metadata: {
-        bookingId: booking._id.toString(),
-      },
+      metadata: { bookingId: booking._id.toString() },
     });
 
     booking.paymentLink = session.url;
     await booking.save();
 
-    return res.json({ success: true, url: session.url });
+    res.json({ success: true, url: session.url });
   } catch (err) {
-    console.error("BOOKING ERROR:", err);
-    return res.status(500).json({ success: false });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 };

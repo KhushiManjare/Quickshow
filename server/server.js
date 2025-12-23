@@ -373,6 +373,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./configs/db.js";
+import { clerkMiddleware } from "@clerk/express";
 import { serve } from "inngest/express";
 
 import { inngest, functions } from "./inngest/index.js";
@@ -385,28 +386,42 @@ import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 const app = express();
 const port = process.env.PORT || 3000;
 
+/* ================= DB ================= */
 await connectDB();
 
-/* 🔥 STRIPE WEBHOOK FIRST */
+/* ================= CORS (🔥 VERY IMPORTANT) ================= */
+const allowedOrigins = [
+  "https://quickshow-ceq6.vercel.app", // frontend
+  "https://quickshow-tomo.vercel.app", // backend
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS BLOCKED"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-clerk-user-id"],
+  })
+);
+
+/* ================= STRIPE WEBHOOK ================= */
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhooks
 );
 
-/* 🔥 CORS (ALLOW BOTH DOMAINS) */
-app.use(
-  cors({
-    origin: [
-      "https://quickshow-tomo.vercel.app",
-      "https://quickshow-ceq6.vercel.app",
-    ],
-    credentials: true,
-  })
-);
-
+/* ================= MIDDLEWARE ================= */
 app.use(express.json());
+app.use(clerkMiddleware());
 
+/* ================= ROUTES ================= */
 app.get("/", (req, res) => res.send("Server is Live"));
 
 app.use("/api/show", showRouter);
@@ -415,6 +430,7 @@ app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/booking", bookingRouter);
 
+/* ================= START ================= */
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
