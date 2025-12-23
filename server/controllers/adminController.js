@@ -23,19 +23,19 @@ export const getDashboardData = async (req, res) => {
   try {
     await connectDB();
 
-    // ✅ Paid bookings
     const bookings = await Booking.find({ isPaid: true }).lean();
 
-    // ✅ ALL shows (past + future)
-    const shows = await Show.find({ isActive: true })
+    // 🔥 FIX: DO NOT FILTER BY isActive
+    const activeShows = await Show.find({
+      showDateTime: { $gte: new Date() }, // future shows only
+    })
       .populate("movie")
       .sort({ showDateTime: 1 })
       .lean();
 
-    // ✅ Users count
     const totalUser = await User.countDocuments();
 
-    return res.json({
+    res.json({
       success: true,
       dashboardData: {
         totalBookings: bookings.length,
@@ -43,13 +43,13 @@ export const getDashboardData = async (req, res) => {
           (sum, b) => sum + Number(b.amount || 0),
           0
         ),
-        activeShows: shows.filter((s) => s.movie),
+        activeShows, // ✅ NOW RETURNS DATA
         totalUser,
       },
     });
-  } catch (error) {
-    console.error("DASHBOARD ERROR:", error);
-    return res.status(500).json({ success: false });
+  } catch (err) {
+    console.error("DASHBOARD ERROR:", err);
+    res.status(500).json({ success: false });
   }
 };
 
