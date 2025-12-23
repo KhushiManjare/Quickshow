@@ -73,7 +73,8 @@
 //     res.json({ success: false, message: error.message });
 //   }
 // };
-import { clerkClient } from "@clerk/express";
+import { clerkClient } from "@clerk/clerk-sdk-node";
+
 import Booking from "../models/Booking.js";
 import Movie from "../models/Movie.js";
 import axios from "axios";
