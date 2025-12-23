@@ -813,8 +813,7 @@ export const getOccupiedSeats = async (req, res) => {
 /* ===== CREATE BOOKING (FIXED) ===== */
 export const createBooking = async (req, res) => {
   try {
-    // ✅ CORRECT WAY WITH CLERK
-    const userId = req.auth.userId;
+    const userId = req.auth.userId; // ✅ FIX
 
     if (!userId) {
       return res.status(401).json({
@@ -826,12 +825,19 @@ export const createBooking = async (req, res) => {
     const { showId, selectedSeats } = req.body;
     const origin = req.headers.origin;
 
+    if (!showId || !Array.isArray(selectedSeats) || selectedSeats.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking data",
+      });
+    }
+
     const show = await Show.findById(showId).populate("movie");
     if (!show || !show.movie) {
       return res.json({ success: false, message: "Show not found" });
     }
 
-    // seat validation
+    // Seat check
     for (const seat of selectedSeats) {
       if (show.occupiedSeats?.[seat]) {
         return res.json({
@@ -851,14 +857,15 @@ export const createBooking = async (req, res) => {
       isPaid: false,
     });
 
-    // reserve seats
     selectedSeats.forEach((seat) => {
       show.occupiedSeats[seat] = userId;
     });
+
     show.markModified("occupiedSeats");
     await show.save();
 
-    // 🔥 STRIPE SESSION
+    
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -884,12 +891,15 @@ export const createBooking = async (req, res) => {
     booking.paymentLink = session.url;
     await booking.save();
 
-    res.json({
+    return res.json({
       success: true,
       url: session.url,
     });
-  } catch (err) {
-    console.error("BOOKING ERROR:", err);
-    res.status(500).json({ success: false });
+  } catch (error) {
+    console.error("CREATE BOOKING ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Booking failed",
+    });
   }
 };
