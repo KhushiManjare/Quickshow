@@ -399,7 +399,7 @@
 // app.use(
 //   cors({
 //     origin: [
-//       "https://quickshow-frontend-bkvf.onrender.com",
+//       "https://quickshow-ceq6.vercel.app",
 //       "http://localhost:5173",
 //     ],
 //     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -444,8 +444,9 @@ import userRouter from "./routes/userRoutes.js";
 import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
+/* ================= DB ================= */
 await connectDB();
 
 /* ================= STRIPE WEBHOOK (FIRST & ISOLATED) ================= */
@@ -455,24 +456,26 @@ app.post(
   stripeWebhooks
 );
 
-/* ================= CORS (BEFORE CLERK) ================= */
+/* ================= CORS (FINAL FIX) ================= */
 app.use(
   cors({
     origin: [
-      "https://quickshow-frontend-bkvf.onrender.com",
       "http://localhost:5173",
+      "https://quickshow-frontend-bkvf.onrender.com",
+      "https://quickshow-ceq6.vercel.app",
+      "https://quickshow-tomo.vercel.app",
     ],
     credentials: true,
   })
 );
 
-/* 🔑 VERY IMPORTANT: allow preflight */
+/* 🔥 PREFLIGHT */
 app.options("*", cors());
 
 /* ================= BODY PARSER ================= */
 app.use(express.json());
 
-/* ================= PUBLIC ROUTES (NO CLERK) ================= */
+/* ================= PUBLIC ROUTES ================= */
 app.get("/", (req, res) => res.send("Server is Live"));
 app.use("/api/show", showRouter);
 app.use("/api/inngest", serve({ client: inngest, functions }));
