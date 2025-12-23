@@ -325,6 +325,48 @@
 // app.listen(port, () => {
 //   console.log(`🚀 Server running on port ${port}`);
 // });
+// import dotenv from "dotenv";
+// dotenv.config();
+
+// import express from "express";
+// import cors from "cors";
+// import connectDB from "./configs/db.js";
+// import { serve } from "inngest/express";
+
+// import { inngest, functions } from "./inngest/index.js";
+// import showRouter from "./routes/showRoutes.js";
+// import bookingRouter from "./routes/bookingRoutes.js";
+// import adminRouter from "./routes/adminRoutes.js";
+// import userRouter from "./routes/userRoutes.js";
+// import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
+
+// const app = express();
+// const port = process.env.PORT || 3000;
+
+// await connectDB();
+
+// /* 🔥 STRIPE WEBHOOK (FIRST) */
+// app.post(
+//   "/api/stripe/webhook",
+//   express.raw({ type: "application/json" }),
+//   stripeWebhooks
+// );
+
+// app.use(cors());
+// app.use(express.json());
+
+// app.get("/", (req, res) => res.send("Server is Live"));
+
+// /* ROUTES (NO CLERK ON ADMIN) */
+// app.use("/api/show", showRouter);
+// app.use("/api/inngest", serve({ client: inngest, functions }));
+// app.use("/api/user", userRouter);
+// app.use("/api/admin", adminRouter);
+// app.use("/api/booking", bookingRouter);
+
+// app.listen(port, () => {
+//   console.log(`🚀 Server running on port ${port}`);
+// });
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -341,11 +383,10 @@ import userRouter from "./routes/userRoutes.js";
 import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 await connectDB();
 
-/* 🔥 STRIPE WEBHOOK (FIRST) */
+/* STRIPE WEBHOOK — MUST BE FIRST */
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -355,15 +396,13 @@ app.post(
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => res.send("Server is Live"));
+app.get("/", (_, res) => res.send("Server is Live"));
 
-/* ROUTES (NO CLERK ON ADMIN) */
 app.use("/api/show", showRouter);
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/booking", bookingRouter);
 
-app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
-});
+/* 🔥 REQUIRED FOR VERCEL */
+export default app;
