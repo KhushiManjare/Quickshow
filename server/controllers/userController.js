@@ -258,63 +258,93 @@
 // };
 import Booking from "../models/Booking.js";
 import Movie from "../models/Movie.js";
+import axios from "axios";
 import { clerkClient } from "@clerk/express";
 
-/* ================= USER BOOKINGS ================= */
+/* ================= GET USER BOOKINGS ================= */
 export const getUserBookings = async (req, res) => {
   try {
-    const userId = req.headers["x-clerk-user-id"];
-    if (!userId) return res.status(401).json({ success: false });
+    const userId = req.auth()?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
     const bookings = await Booking.find({ user: userId })
-      .populate({ path: "show", populate: { path: "movie" } })
+      .populate({
+        path: "show",
+        populate: { path: "movie" },
+      })
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, bookings });
-  } catch (err) {
-    res.status(500).json({ success: false });
+    return res.json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    console.error("GET BOOKINGS ERROR:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+    });
   }
 };
 
 /* ================= UPDATE FAVORITE ================= */
 export const updateFavorite = async (req, res) => {
   try {
-    const userId = req.headers["x-clerk-user-id"];
+    const userId = req.auth()?.userId;
     const { movieId } = req.body;
 
-    if (!userId || !movieId)
+    if (!userId || !movieId) {
       return res.status(400).json({ success: false });
+    }
 
     const user = await clerkClient.users.getUser(userId);
-    const favorites = user.privateMetadata?.favorites || [];
 
-    const updated = favorites.includes(movieId)
+    const favorites = Array.isArray(user.privateMetadata?.favorites)
+      ? user.privateMetadata.favorites
+      : [];
+
+    const updatedFavorites = favorites.includes(movieId)
       ? favorites.filter((id) => id !== movieId)
       : [...favorites, movieId];
 
     await clerkClient.users.updateUserMetadata(userId, {
-      privateMetadata: { favorites: updated },
+      privateMetadata: { favorites: updatedFavorites },
     });
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("FAVORITE ERROR:", err);
-    res.status(500).json({ success: false });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("UPDATE FAVORITE ERROR:", error.message);
+    return res.status(500).json({ success: false });
   }
 };
 
 /* ================= GET FAVORITES ================= */
 export const getFavorites = async (req, res) => {
   try {
-    const userId = req.headers["x-clerk-user-id"];
-    if (!userId) return res.status(401).json({ success: false });
+    const userId = req.auth()?.userId;
+    if (!userId) return res.json({ success: true, movies: [] });
 
     const user = await clerkClient.users.getUser(userId);
-    const favorites = (user.privateMetadata?.favorites || []).map(Number);
+
+    const favorites = Array.isArray(user.privateMetadata?.favorites)
+      ? user.privateMetadata.favorites.map(Number).filter(Boolean)
+      : [];
+
+    if (favorites.length === 0) {
+      return res.json({ success: true, movies: [] });
+    }
 
     const movies = await Movie.find({ tmdbId: { $in: favorites } });
-    res.json({ success: true, movies });
-  } catch (err) {
-    res.status(500).json({ success: false });
+
+    return res.json({ success: true, movies });
+  } catch (error) {
+    console.error("GET FAVORITES ERROR:", error.message);
+    return res.status(500).json({ success: false, movies: [] });
   }
 };
