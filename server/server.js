@@ -460,10 +460,10 @@ app.post(
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://quickshow-frontend-bkvf.onrender.com",
-      "https://quickshow-ceq6.vercel.app",
-      "https://quickshow-tomo.vercel.app",
+    
+      "https://quickshow-backend-vlx2.onrender.com",
+      "quickshow-frontend-iota.vercel.app",
+      ,
     ],
     credentials: true,
   })
