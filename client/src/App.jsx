@@ -21,7 +21,8 @@ import Loading from "./components/Loading";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
-  const { user } = useAppContext();
+
+  const { user, dashboardRefreshKey } = useAppContext(); // 🔥 IMPORTANT
 
   return (
     <>
@@ -50,7 +51,11 @@ const App = () => {
             )
           }
         >
-          <Route index element={<Dashboard />} />
+          {/* 🔥 FORCE DASHBOARD REMOUNT */}
+          <Route
+            index
+            element={<Dashboard key={dashboardRefreshKey} />}
+          />
           <Route path="add-shows" element={<AddShows />} />
           <Route path="list-shows" element={<ListShows />} />
           <Route path="list-bookings" element={<ListBookings />} />
