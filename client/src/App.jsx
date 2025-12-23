@@ -19,42 +19,47 @@ import { useAppContext } from "./context/AppContext";
 import { SignIn } from "@clerk/clerk-react";
 import Loading from "./components/Loading";
 
-const Layout = () => {
-  const { isAdmin, fetchIsAdmin } = useAppContext();
+const App = () => {
+  const isAdminRoute = useLocation().pathname.startsWith("/admin");
+  const { user } = useAppContext();
 
-  // 🔥 IMPORTANT: always verify admin on layout mount
-  useEffect(() => {
-    fetchIsAdmin();
-  }, []);
-
-  // ⏳ While admin status is being checked
-  if (isAdmin === undefined) {
-    return <Loading />;
-  }
-
-  // 🚫 Not an admin
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500 text-lg font-medium">
-          You are not authorized to access admin panel
-        </p>
-      </div>
-    );
-  }
-
-  // ✅ Authorized admin
   return (
     <>
-      <AdminNavbar />
-      <div className="flex">
-        <AdminSidebar />
-        <div className="flex-1 px-4 py-10 md:px-10 h-[calc(100vh-64px)] overflow-y-auto">
-          <Outlet />
-        </div>
-      </div>
+      <Toaster />
+      {!isAdminRoute && <Navbar />}
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/movies" element={<Movies />} />
+        <Route path="/movies/:id" element={<MovieDetails />} />
+        <Route path="/movies/:id/:date" element={<SeatLayout />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/favorites" element={<Favorite />} />
+        <Route path="/loading/:nextUrl" element={<Loading />} />
+
+        {/* ADMIN ROUTES */}
+        <Route
+          path="/admin/*"
+          element={
+            user ? (
+              <Layout />
+            ) : (
+              <div className="min-h-screen flex justify-center items-center">
+                <SignIn fallbackRedirectUrl="/admin" />
+              </div>
+            )
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="add-shows" element={<AddShows />} />
+          <Route path="list-shows" element={<ListShows />} />
+          <Route path="list-bookings" element={<ListBookings />} />
+        </Route>
+      </Routes>
+
+      {!isAdminRoute && <Footer />}
     </>
   );
 };
 
-export default Layout;
+export default App;
