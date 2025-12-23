@@ -3,9 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  preview: {
-    allowedHosts: [
-      "quickshow-frontend-qsl6.onrender.com",
-    ],
-  },
+  base: "/", // 👈 ADD THIS (VERY IMPORTANT)
 });
