@@ -14,7 +14,14 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const Dashboard = () => {
-  const { axios, getToken, user, image_base_url } = useAppContext();
+  const {
+    axios,
+    getToken,
+    user,
+    image_base_url,
+    dashboardRefreshKey, // 🔥 IMPORTANT
+  } = useAppContext();
+
   const currency = import.meta.env.VITE_CURRENCY;
 
   const [dashboardData, setDashboardData] = useState({
@@ -49,9 +56,11 @@ const Dashboard = () => {
     },
   ];
 
+  /* ================= FETCH DASHBOARD ================= */
   const fetchDashboardData = async () => {
     try {
       const token = await getToken();
+
       const { data } = await axios.get("/api/admin/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -69,9 +78,10 @@ const Dashboard = () => {
     }
   };
 
+  /* 🔥 REFRESH ON LOGIN + ADD SHOW */
   useEffect(() => {
     if (user) fetchDashboardData();
-  }, [user]);
+  }, [user, dashboardRefreshKey]); // 👈 THIS FIXES IT
 
   if (loading) return <Loading />;
 
@@ -82,6 +92,7 @@ const Dashboard = () => {
       {/* DASHBOARD CARDS */}
       <div className="relative flex flex-wrap gap-4 mt-6">
         <BlurCircle top="-100px" left="0" />
+
         {dashboardCards.map((card, index) => (
           <div
             key={index}
@@ -98,11 +109,12 @@ const Dashboard = () => {
 
       {/* ACTIVE SHOWS */}
       <p className="mt-10 text-lg font-medium">Active Shows</p>
+
       <div className="relative flex flex-wrap gap-6 mt-4 max-w-5xl">
         <BlurCircle top="100px" left="-10%" />
 
         {dashboardData.activeShows
-          ?.filter((show) => show?.movie) // 🔥 NULL SAFE FILTER
+          ?.filter((show) => show?.movie)
           .map((show) => (
             <div
               key={show._id}

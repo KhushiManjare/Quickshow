@@ -4,7 +4,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const AddShows = () => {
-  const { getToken, image_base_url } = useAppContext();
+  const { getToken, image_base_url, refreshDashboard } = useAppContext();
 
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -12,17 +12,17 @@ const AddShows = () => {
   const [dateTimeInput, setDateTimeInput] = useState("");
   const [showDateTimes, setShowDateTimes] = useState([]);
 
-  // 🎬 FETCH TMDB MOVIES FROM BACKEND
+  /* ================= FETCH MOVIES ================= */
   const fetchMovies = async () => {
     try {
       const { data } = await axios.get("/api/show/now-playing");
-      if (data.success) {
+      if (data?.success) {
         setMovies(data.movies);
       } else {
         toast.error("No movies found");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to load movies");
     }
   };
@@ -31,13 +31,14 @@ const AddShows = () => {
     fetchMovies();
   }, []);
 
+  /* ================= ADD DATE TIME ================= */
   const addDateTime = () => {
     if (!dateTimeInput) return;
-    setShowDateTimes([...showDateTimes, dateTimeInput]);
+    setShowDateTimes((prev) => [...prev, dateTimeInput]);
     setDateTimeInput("");
   };
 
-  // ➕ ADD SHOW
+  /* ================= ADD SHOW ================= */
   const addShow = async () => {
     if (!selectedMovie || !showPrice || showDateTimes.length === 0) {
       return toast.error("Fill all fields");
@@ -58,16 +59,19 @@ const AddShows = () => {
         }
       );
 
-      if (data.success) {
+      if (data?.success) {
         toast.success("Show added successfully");
+
+        refreshDashboard(); // 🔥 auto refresh dashboard
+
         setSelectedMovie(null);
         setShowPrice("");
         setShowDateTimes([]);
       } else {
-        toast.error(data.message);
+        toast.error(data?.message || "Failed to add show");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to add show");
     }
   };
@@ -99,26 +103,26 @@ const AddShows = () => {
       </div>
 
       {/* PRICE */}
-     <input
-  type="number"
-  placeholder="Show Price"
-  value={showPrice}
-  onChange={(e) => setShowPrice(e.target.value)}
-  className="mt-6 p-2 border rounded w-60"
-/>
+      <input
+        type="number"
+        placeholder="Show Price"
+        value={showPrice}
+        onChange={(e) => setShowPrice(e.target.value)}
+        className="mt-6 p-2 border rounded w-60 text-black"
+      />
 
       {/* DATE TIME */}
-     <div className="flex gap-3 mt-4 items-center">
+      <div className="flex gap-3 mt-4 items-center">
         <input
-  type="datetime-local"
-  value={dateTimeInput}
-  onChange={(e) => setDateTimeInput(e.target.value)}
-  className="p-2 border rounded w-72"
-/>
+          type="datetime-local"
+          value={dateTimeInput}
+          onChange={(e) => setDateTimeInput(e.target.value)}
+          className="p-2 border rounded w-72 text-black"
+        />
 
         <button
           onClick={addDateTime}
-          className="px-4 bg-black text-white rounded"
+          className="px-4 py-2 bg-black text-white rounded"
         >
           Add
         </button>
