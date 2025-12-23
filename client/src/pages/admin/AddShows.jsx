@@ -323,9 +323,16 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const AddShows = () => {
-  const { getToken, image_base_url } = useAppContext();
+  const {
+    getToken,
+    image_base_url,
+    refreshDashboard, // ✅ IMPORTANT
+  } = useAppContext();
+
+  const navigate = useNavigate();
 
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -334,11 +341,17 @@ const AddShows = () => {
   const [showDateTimes, setShowDateTimes] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  /* ================= FETCH MOVIES ================= */
   const fetchMovies = async () => {
     try {
       const { data } = await axios.get("/api/show/now-playing");
-      if (data?.success) setMovies(data.movies);
-    } catch {
+      if (data?.success && Array.isArray(data.movies)) {
+        setMovies(data.movies);
+      } else {
+        setMovies([]);
+      }
+    } catch (error) {
+      console.error("FETCH MOVIES ERROR:", error);
       toast.error("Failed to load movies");
     }
   };
@@ -347,45 +360,63 @@ const AddShows = () => {
     fetchMovies();
   }, []);
 
+  /* ================= ADD DATE TIME ================= */
   const addDateTime = () => {
-    if (!dateTimeInput) return toast.error("Select date & time");
-    if (showDateTimes.includes(dateTimeInput))
-      return toast.error("Already added");
+    if (!dateTimeInput) {
+      toast.error("Select date & time");
+      return;
+    }
 
-    setShowDateTimes([...showDateTimes, dateTimeInput]);
+    if (showDateTimes.includes(dateTimeInput)) {
+      toast.error("This show time is already added");
+      return;
+    }
+
+    setShowDateTimes((prev) => [...prev, dateTimeInput]);
     setDateTimeInput("");
   };
 
+  /* ================= ADD SHOW ================= */
   const addShow = async () => {
     if (!selectedMovie) return toast.error("Select a movie");
-    if (!showPrice) return toast.error("Enter price");
+    if (!showPrice || Number(showPrice) <= 0)
+      return toast.error("Enter valid price");
     if (showDateTimes.length === 0)
-      return toast.error("Add at least one time");
+      return toast.error("Add at least one show time");
 
     try {
       setLoading(true);
-      const token = await getToken();
 
-      await axios.post(
+      const token = await getToken();
+      if (!token) return toast.error("Authentication failed");
+
+      const payload = {
+        movie: selectedMovie,
+        showPrice: Number(showPrice),
+        showDateTimes,
+      };
+
+      const { data } = await axios.post(
         "/api/admin/add-show",
-        {
-          movie: selectedMovie,
-          showPrice: Number(showPrice),
-          showDateTimes,
-        },
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      toast.success("Show added successfully");
+      if (data?.success) {
+        toast.success("Show added successfully");
 
-      // 🔥 FINAL, GUARANTEED FIX
-      setTimeout(() => {
-        window.location.href = "/admin";
-      }, 800);
+        // 🔥 THIS IS THE REAL FIX
+        refreshDashboard();
 
-    } catch (err) {
+        // go back to dashboard
+        navigate("/admin");
+      } else {
+        toast.error("Failed to add show");
+      }
+    } catch (error) {
+      console.error("ADD SHOW ERROR:", error);
       toast.error("Failed to add show");
     } finally {
       setLoading(false);
@@ -396,12 +427,13 @@ const AddShows = () => {
     <div className="p-6">
       <h1 className="text-xl font-semibold mb-6">Add Shows</h1>
 
+      {/* MOVIES GRID */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
         {movies.map((movie) => (
           <div
             key={movie.id}
             onClick={() => setSelectedMovie(movie)}
-            className={`cursor-pointer border-2 rounded ${
+            className={`cursor-pointer rounded-xl overflow-hidden border-2 ${
               selectedMovie?.id === movie.id
                 ? "border-green-500"
                 : "border-transparent"
@@ -409,37 +441,54 @@ const AddShows = () => {
           >
             <img
               src={image_base_url + movie.poster_path}
-              className="h-72 w-full object-cover"
+              alt={movie.title}
+              className="w-full h-72 object-cover"
             />
             <p className="text-center mt-2 text-sm">{movie.title}</p>
           </div>
         ))}
       </div>
 
+      {/* PRICE */}
       <input
         type="number"
         placeholder="Show Price"
         value={showPrice}
         onChange={(e) => setShowPrice(e.target.value)}
-        className="mt-6 p-2 border w-60 text-black"
+        className="mt-6 p-2 border rounded w-60 text-black"
       />
 
-      <div className="flex gap-3 mt-4">
+      {/* DATE TIME */}
+      <div className="flex gap-3 mt-4 items-center">
         <input
           type="datetime-local"
           value={dateTimeInput}
           onChange={(e) => setDateTimeInput(e.target.value)}
-          className="p-2 border text-black"
+          className="p-2 border bg-white rounded w-72 text-black"
         />
-        <button onClick={addDateTime} className="px-4 bg-white text-black">
+
+        <button
+          onClick={addDateTime}
+          className="px-4 py-2 bg-white text-black rounded"
+        >
           Add
         </button>
       </div>
 
+      {/* SHOW TIMES */}
+      {showDateTimes.length > 0 && (
+        <ul className="mt-3 text-sm text-gray-300">
+          {showDateTimes.map((dt, i) => (
+            <li key={i}>• {dt}</li>
+          ))}
+        </ul>
+      )}
+
+      {/* ADD SHOW BUTTON */}
       <button
         onClick={addShow}
         disabled={loading}
-        className="mt-6 px-6 py-2 bg-green-600 text-white"
+        className="mt-6 px-6 py-2 bg-green-600 text-white rounded disabled:opacity-60"
       >
         {loading ? "Adding..." : "Add Show"}
       </button>
