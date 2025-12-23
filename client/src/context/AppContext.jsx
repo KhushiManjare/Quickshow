@@ -139,19 +139,23 @@ export const AppProvider = ({ children }) => {
 
   /* ================= FETCH SHOWS ================= */
   const fetchShows = async () => {
-    try {
-      const { data } = await axios.get("/api/show/now-playing");
+  try {
+    const { data } = await axios.get("/api/show/now-playing", {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
 
-      if (data?.success && Array.isArray(data.movies)) {
-        setShows(data.movies);
-      } else {
-        setShows([]);
-      }
-    } catch (error) {
-      console.error("FETCH SHOWS ERROR:", error);
+    if (data?.success && Array.isArray(data.movies)) {
+      setShows(data.movies);
+    } else {
       setShows([]);
     }
-  };
+  } catch (error) {
+    console.error("FETCH SHOWS ERROR:", error);
+    setShows([]);
+  }
+};
 
   /* ================= FETCH FAVORITES (FIXED) ================= */
   const fetchFavoriteMovies = async () => {
