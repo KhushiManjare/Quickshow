@@ -154,24 +154,16 @@ export const AppProvider = ({ children }) => {
 
   /* ================= ADMIN CHECK ================= */
   const fetchIsAdmin = async () => {
-    try {
-      const token = await getToken();
-      if (!token) return;
+  const token = await getToken();
+  if (!token) return;
 
-      const { data } = await axios.get("/api/admin/is-admin", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  const { data } = await axios.get("/api/admin/is-admin", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-      setIsAdmin(data.isAdmin);
+  setIsAdmin(data.isAdmin);
+};
 
-      if (!data.isAdmin && location.pathname.startsWith("/admin")) {
-        navigate("/");
-        toast.error("You are not authorized to access admin dashboard");
-      }
-    } catch (error) {
-      console.error("ADMIN CHECK ERROR:", error);
-    }
-  };
 
   /* ================= DASHBOARD REFRESH ================= */
   const refreshDashboard = () => {
@@ -241,7 +233,7 @@ export const AppProvider = ({ children }) => {
     user,
     getToken,
     navigate,
-    isAdmin,
+    fetchIsAdmin,
     shows,
     favoriteMovies,
     fetchFavoriteMovies,
