@@ -1,12 +1,23 @@
-import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
-import AdminNavbar from "./components/admin/AdminNavbar";
-import AdminSidebar from "./components/admin/AdminSidebar";
+import Navbar from "./components/Navbar";
+import { Route, Routes, useLocation } from "react-router-dom";
+import Home from "./pages/Home";
+import Movies from "./pages/Movies";
+import MovieDetails from "./pages/MovieDetails";
+import SeatLayout from "./pages/SeatLayout";
+import MyBookings from "./pages/MyBookings";
+import Favorite from "./pages/Favorite";
+import { Toaster } from "react-hot-toast";
+import Footer from "./components/Footer";
 
-import Loading from "./components/Loading";
+import Layout from "./pages/admin/Layout";
+import Dashboard from "./pages/admin/Dashboard";
+import AddShows from "./pages/admin/AddShows";
+import ListShows from "./pages/admin/ListShows";
+import ListBookings from "./pages/admin/ListBookings";
 
 import { useAppContext } from "./context/AppContext";
-
+import { SignIn } from "@clerk/clerk-react";
+import Loading from "./components/Loading";
 
 const Layout = () => {
   const { isAdmin, fetchIsAdmin } = useAppContext();
