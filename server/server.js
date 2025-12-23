@@ -444,26 +444,23 @@ import userRouter from "./routes/userRoutes.js";
 import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 const app = express();
-const port = process.env.PORT || 10000;
 
 /* ================= DB ================= */
 await connectDB();
 
-/* ================= STRIPE WEBHOOK (FIRST, RAW ONLY) ================= */
+/* ================= STRIPE WEBHOOK (MUST BE FIRST) ================= */
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhooks
 );
 
-/* ================= CORS ================= */
+/* ================= CORS (VERCEL SAFE) ================= */
 app.use(
   cors({
     origin: [
-    
-      "https://quickshow-backend-vlx2.onrender.com",
-      "quickshow-frontend-iota.vercel.app",
-      ,
+      "http://localhost:5173",
+      "https://quickshow-frontend-iota.vercel.app",
     ],
     credentials: true,
   })
@@ -472,17 +469,18 @@ app.use(
 /* ================= BODY PARSER ================= */
 app.use(express.json());
 
-/* ================= PUBLIC ROUTES ================= */
-app.get("/", (req, res) => res.send("Server is Live"));
+/* ================= HEALTH CHECK ================= */
+app.get("/", (req, res) => {
+  res.send("Server is Live");
+});
+
+/* ================= ROUTES ================= */
 app.use("/api/show", showRouter);
 app.use("/api/inngest", serve({ client: inngest, functions }));
 
-/* ================= PROTECTED ROUTES ================= */
 app.use("/api/user", clerkMiddleware(), userRouter);
 app.use("/api/admin", clerkMiddleware(), adminRouter);
 app.use("/api/booking", clerkMiddleware(), bookingRouter);
 
-/* ================= START ================= */
-app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
-});
+/* ================= EXPORT FOR VERCEL ================= */
+export default app;

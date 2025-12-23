@@ -710,6 +710,199 @@
 //     });
 //   }
 // };
+// import axios from "axios";
+// import Movie from "../models/Movie.js";
+// import Show from "../models/Show.js";
+
+// /* ================= TMDB NOW PLAYING ================= */
+// export const getNowPlayingMovies = async (req, res) => {
+//   try {
+//     const response = await axios.get(
+//       "https://api.themoviedb.org/3/movie/now_playing",
+//       {
+//         params: {
+//           api_key: process.env.TMDB_API_KEY,
+//           language: "en-US",
+//           page: 1,
+//         },
+//         timeout: 8000,
+//       }
+//     );
+
+//     return res.json({
+//       success: true,
+//       movies: response.data.results || [],
+//     });
+//   } catch (error) {
+//     console.error("TMDB ERROR:", error.message);
+//     return res.status(500).json({
+//       success: false,
+//       message: "TMDB fetch failed",
+//     });
+//   }
+// };
+
+// /* ================= MOVIES THAT HAVE SHOWS ================= */
+// export const getMoviesWithShows = async (req, res) => {
+//   try {
+//     const movieIds = await Show.distinct("movie");
+
+//     const movies = await Movie.find({
+//       _id: { $in: movieIds },
+//     }).select("tmdbId title poster_path backdrop_path");
+
+//     return res.json({
+//       success: true,
+//       movies,
+//     });
+//   } catch (error) {
+//     console.error("MOVIES WITH SHOWS ERROR:", error.message);
+//     return res.status(500).json({
+//       success: false,
+//       movies: [],
+//     });
+//   }
+// };
+
+// /* ================= SHOW DATES FOR MOVIE ================= */
+// /**
+//  * movieId = TMDB ID (NUMBER)
+//  * Auto-creates REAL shows if none exist
+//  */
+// export const getMovieWithShows = async (req, res) => {
+//   try {
+//     const tmdbId = Number(req.params.movieId);
+
+//     if (!tmdbId || isNaN(tmdbId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid movie id",
+//       });
+//     }
+
+//     /* 1️⃣ Ensure movie exists */
+//     let movie = await Movie.findOne({ tmdbId });
+
+//     if (!movie) {
+//       movie = await Movie.create({ tmdbId });
+//     }
+
+//     /* 2️⃣ Fetch existing shows */
+//     let shows = await Show.find({
+//       movie: movie._id,
+//       // isActive: true,
+//     }).sort({ showDateTime: 1 });
+
+//     /* 3️⃣ Auto-create REAL shows if none exist */
+//     if (shows.length === 0) {
+//       const today = new Date();
+
+//       const newShows = [
+//         {
+//           movie: movie._id,
+//           showDateTime: new Date(
+//             today.getFullYear(),
+//             today.getMonth(),
+//             today.getDate() + 1, // tomorrow
+//             15,
+//             15
+//           ),
+//           showPrice: 250,
+//           isActive: true,
+//         },
+//         {
+//           movie: movie._id,
+//           showDateTime: new Date(
+//             today.getFullYear(),
+//             today.getMonth(),
+//             today.getDate() + 1,
+//             18,
+//             30
+//           ),
+//           showPrice: 300,
+//           isActive: true,
+//         },
+//       ];
+
+//       await Show.insertMany(newShows);
+
+//       shows = await Show.find({
+//         movie: movie._id,
+//         // isActive: true,
+//       }).sort({ showDateTime: 1 });
+//     }
+
+//     /* 4️⃣ Group shows by date for UI */
+//     const grouped = {};
+
+//     shows.forEach((show) => {
+//       const date = show.showDateTime.toISOString().split("T")[0];
+
+//       if (!grouped[date]) grouped[date] = [];
+
+//       grouped[date].push({
+//         showId: show._id,
+//         time: show.showDateTime.toLocaleTimeString("en-IN", {
+//           hour: "2-digit",
+//           minute: "2-digit",
+//         }),
+//         price: show.showPrice,
+//       });
+//     });
+
+//     const formattedShows = Object.keys(grouped).map((date) => ({
+//       date,
+//       shows: grouped[date],
+//     }));
+
+//     return res.json({
+//       success: true,
+//       movie,
+//       shows: formattedShows,
+//     });
+//   } catch (error) {
+//     console.error("SHOW FETCH ERROR:", error.message);
+//     return res.status(500).json({
+//       success: false,
+//       shows: [],
+//     });
+//   }
+// };
+
+// /* ================= MOVIE CAST (TMDB) ================= */
+// export const getMovieCast = async (req, res) => {
+//   try {
+//     const { movieId } = req.params;
+
+//     if (!movieId || isNaN(movieId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid TMDB movie id",
+//       });
+//     }
+
+//     const response = await axios.get(
+//       `https://api.themoviedb.org/3/movie/${movieId}/credits`,
+//       {
+//         params: {
+//           api_key: process.env.TMDB_API_KEY,
+//         },
+//         timeout: 8000,
+//       }
+//     );
+
+//     return res.json({
+//       success: true,
+//       cast: response.data.cast || [],
+//     });
+//   } catch (error) {
+//     console.error("CAST FETCH ERROR:", error.message);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch cast",
+//     });
+//   }
+// };
 import axios from "axios";
 import Movie from "../models/Movie.js";
 import Show from "../models/Show.js";
@@ -717,6 +910,13 @@ import Show from "../models/Show.js";
 /* ================= TMDB NOW PLAYING ================= */
 export const getNowPlayingMovies = async (req, res) => {
   try {
+    if (!process.env.TMDB_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: "TMDB API key missing",
+      });
+    }
+
     const response = await axios.get(
       "https://api.themoviedb.org/3/movie/now_playing",
       {
@@ -725,19 +925,21 @@ export const getNowPlayingMovies = async (req, res) => {
           language: "en-US",
           page: 1,
         },
-        timeout: 8000,
+        timeout: 10000,
       }
     );
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      movies: response.data.results || [],
+      movies: Array.isArray(response.data.results)
+        ? response.data.results
+        : [],
     });
   } catch (error) {
     console.error("TMDB ERROR:", error.message);
     return res.status(500).json({
       success: false,
-      message: "TMDB fetch failed",
+      movies: [],
     });
   }
 };
@@ -747,11 +949,18 @@ export const getMoviesWithShows = async (req, res) => {
   try {
     const movieIds = await Show.distinct("movie");
 
+    if (!movieIds.length) {
+      return res.json({
+        success: true,
+        movies: [],
+      });
+    }
+
     const movies = await Movie.find({
       _id: { $in: movieIds },
     }).select("tmdbId title poster_path backdrop_path");
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       movies,
     });
@@ -765,74 +974,30 @@ export const getMoviesWithShows = async (req, res) => {
 };
 
 /* ================= SHOW DATES FOR MOVIE ================= */
-/**
- * movieId = TMDB ID (NUMBER)
- * Auto-creates REAL shows if none exist
- */
 export const getMovieWithShows = async (req, res) => {
   try {
     const tmdbId = Number(req.params.movieId);
 
-    if (!tmdbId || isNaN(tmdbId)) {
+    if (!tmdbId) {
       return res.status(400).json({
         success: false,
         message: "Invalid movie id",
       });
     }
 
-    /* 1️⃣ Ensure movie exists */
+    /* 🔹 Find or create movie (SAFE for serverless) */
     let movie = await Movie.findOne({ tmdbId });
 
     if (!movie) {
       movie = await Movie.create({ tmdbId });
     }
 
-    /* 2️⃣ Fetch existing shows */
-    let shows = await Show.find({
-      movie: movie._id,
-      // isActive: true,
-    }).sort({ showDateTime: 1 });
+    /* 🔹 Fetch shows */
+    let shows = await Show.find({ movie: movie._id }).sort({
+      showDateTime: 1,
+    });
 
-    /* 3️⃣ Auto-create REAL shows if none exist */
-    if (shows.length === 0) {
-      const today = new Date();
-
-      const newShows = [
-        {
-          movie: movie._id,
-          showDateTime: new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate() + 1, // tomorrow
-            15,
-            15
-          ),
-          showPrice: 250,
-          isActive: true,
-        },
-        {
-          movie: movie._id,
-          showDateTime: new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate() + 1,
-            18,
-            30
-          ),
-          showPrice: 300,
-          isActive: true,
-        },
-      ];
-
-      await Show.insertMany(newShows);
-
-      shows = await Show.find({
-        movie: movie._id,
-        // isActive: true,
-      }).sort({ showDateTime: 1 });
-    }
-
-    /* 4️⃣ Group shows by date for UI */
+    /* 🔹 DO NOT AUTO-CREATE SHOWS ON VERCEL (THIS WAS BREAKING IT) */
     const grouped = {};
 
     shows.forEach((show) => {
@@ -855,7 +1020,7 @@ export const getMovieWithShows = async (req, res) => {
       shows: grouped[date],
     }));
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       movie,
       shows: formattedShows,
@@ -869,15 +1034,15 @@ export const getMovieWithShows = async (req, res) => {
   }
 };
 
-/* ================= MOVIE CAST (TMDB) ================= */
+/* ================= MOVIE CAST ================= */
 export const getMovieCast = async (req, res) => {
   try {
-    const { movieId } = req.params;
+    const movieId = Number(req.params.movieId);
 
-    if (!movieId || isNaN(movieId)) {
+    if (!movieId) {
       return res.status(400).json({
         success: false,
-        message: "Invalid TMDB movie id",
+        message: "Invalid movie id",
       });
     }
 
@@ -887,19 +1052,21 @@ export const getMovieCast = async (req, res) => {
         params: {
           api_key: process.env.TMDB_API_KEY,
         },
-        timeout: 8000,
+        timeout: 10000,
       }
     );
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      cast: response.data.cast || [],
+      cast: Array.isArray(response.data.cast)
+        ? response.data.cast
+        : [],
     });
   } catch (error) {
     console.error("CAST FETCH ERROR:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch cast",
+      cast: [],
     });
   }
 };
