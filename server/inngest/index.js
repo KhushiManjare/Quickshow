@@ -382,61 +382,180 @@
 //   sendShowReminders,
 //   sendNewShowNotifications,
 // ];
+// import { Inngest } from "inngest";
+// import User from "../models/User.js";
+// import Booking from "../models/Booking.js";
+// import Show from "../models/Show.js";
+// import { sendEmail } from "../configs/nodeMailer.js";
+
+// /* ================= INNGEST CLIENT ================= */
+// export const inngest = new Inngest({
+//   id: "movie-ticket-booking",
+//   eventKey: process.env.INNGEST_EVENT_KEY, // ✅ CORRECT KEY
+// });
+
+// /* ================= USER SYNC ================= */
+// const syncUserCreation = inngest.createFunction(
+//   { id: "sync-user-from-clerk" },
+//   { event: "clerk/user.created" },
+//   async ({ event }) => {
+//     const { id, first_name, last_name, email_addresses, image_url } = event.data;
+
+//     await User.create({
+//       _id: id,
+//       email: email_addresses[0]?.email_address,
+//       name: `${first_name} ${last_name}`,
+//       image: image_url,
+//     });
+//   }
+// );
+
+// const syncUserDeletion = inngest.createFunction(
+//   { id: "delete-user-with-clerk" },
+//   { event: "clerk/user.deleted" },
+//   async ({ event }) => {
+//     await User.findByIdAndDelete(event.data.id);
+//   }
+// );
+
+// const syncUserUpdation = inngest.createFunction(
+//   { id: "update-user-from-clerk" },
+//   { event: "clerk/user.updated" },
+//   async ({ event }) => {
+//     const { id, first_name, last_name, email_addresses, image_url } = event.data;
+
+//     await User.findByIdAndUpdate(id, {
+//       email: email_addresses[0]?.email_address,
+//       name: `${first_name} ${last_name}`,
+//       image: image_url,
+//     });
+//   }
+// );
+
+// /* ================= RELEASE SEATS ================= */
+// const releaseSeatsAndDeleteBooking = inngest.createFunction(
+//   { id: "release-seats-delete-booking" },
+//   { event: "app/checkpayment" },
+//   async ({ event, step }) => {
+//     await step.sleep("wait-10-minutes", "10m");
+
+//     const booking = await Booking.findById(event.data.bookingId);
+//     if (!booking || booking.isPaid) return;
+
+//     const show = await Show.findById(booking.show);
+//     if (!show) return;
+
+//     booking.bookedSeats.forEach((seat) => {
+//       delete show.occupiedSeats[seat];
+//     });
+
+//     show.markModified("occupiedSeats");
+//     await show.save();
+//     await Booking.findByIdAndDelete(booking._id);
+//   }
+// );
+
+// /* ================= CONFIRMATION EMAIL ================= */
+// const sendBookingConfirmationEmail = inngest.createFunction(
+//   { id: "send-booking-confirmation-email" },
+//   { event: "app/show.booked" },
+//   async ({ event }) => {
+//     const booking = await Booking.findById(event.data.bookingId)
+//       .populate({
+//         path: "show",
+//         populate: { path: "movie", model: "Movie" },
+//       })
+//       .populate("user");
+
+//     if (!booking || !booking.user || !booking.show?.movie) return;
+
+//     await sendEmail({
+//       to: booking.user.email,
+//       subject: `Payment Confirmed: ${booking.show.movie.title}`,
+//       body: `
+//         <h3>Hello ${booking.user.name}</h3>
+//         <p>Your booking is confirmed.</p>
+//         <p><strong>Movie:</strong> ${booking.show.movie.title}</p>
+//       `,
+//     });
+//   }
+// );
+
+// /* ================= EXPORT ================= */
+// export const functions = [
+//   syncUserCreation,
+//   syncUserDeletion,
+//   syncUserUpdation,
+//   releaseSeatsAndDeleteBooking,
+//   sendBookingConfirmationEmail,
+// ];
 import { Inngest } from "inngest";
+import connectDB from "../configs/db.js";
+
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
+import Movie from "../models/Movie.js";
 import { sendEmail } from "../configs/nodeMailer.js";
 
 /* ================= INNGEST CLIENT ================= */
 export const inngest = new Inngest({
   id: "movie-ticket-booking",
-  eventKey: process.env.INNGEST_EVENT_KEY, // ✅ CORRECT KEY
+  eventKey: process.env.INNGEST_EVENT_KEY,
 });
 
-/* ================= USER SYNC ================= */
+/* ================= USER CREATED ================= */
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
   async ({ event }) => {
+    await connectDB();
+
     const { id, first_name, last_name, email_addresses, image_url } = event.data;
 
     await User.create({
       _id: id,
-      email: email_addresses[0]?.email_address,
-      name: `${first_name} ${last_name}`,
+      email: email_addresses?.[0]?.email_address,
+      name: `${first_name || ""} ${last_name || ""}`,
       image: image_url,
     });
   }
 );
 
+/* ================= USER DELETED ================= */
 const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-with-clerk" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
+    await connectDB();
     await User.findByIdAndDelete(event.data.id);
   }
 );
 
+/* ================= USER UPDATED ================= */
 const syncUserUpdation = inngest.createFunction(
   { id: "update-user-from-clerk" },
   { event: "clerk/user.updated" },
   async ({ event }) => {
+    await connectDB();
+
     const { id, first_name, last_name, email_addresses, image_url } = event.data;
 
     await User.findByIdAndUpdate(id, {
-      email: email_addresses[0]?.email_address,
-      name: `${first_name} ${last_name}`,
+      email: email_addresses?.[0]?.email_address,
+      name: `${first_name || ""} ${last_name || ""}`,
       image: image_url,
     });
   }
 );
 
-/* ================= RELEASE SEATS ================= */
+/* ================= RELEASE SEATS (PAYMENT FAIL) ================= */
 const releaseSeatsAndDeleteBooking = inngest.createFunction(
   { id: "release-seats-delete-booking" },
   { event: "app/checkpayment" },
   async ({ event, step }) => {
+    await connectDB();
+
     await step.sleep("wait-10-minutes", "10m");
 
     const booking = await Booking.findById(event.data.bookingId);
@@ -455,11 +574,13 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
   }
 );
 
-/* ================= CONFIRMATION EMAIL ================= */
+/* ================= CONFIRM BOOKING EMAIL ================= */
 const sendBookingConfirmationEmail = inngest.createFunction(
   { id: "send-booking-confirmation-email" },
   { event: "app/show.booked" },
   async ({ event }) => {
+    await connectDB();
+
     const booking = await Booking.findById(event.data.bookingId)
       .populate({
         path: "show",

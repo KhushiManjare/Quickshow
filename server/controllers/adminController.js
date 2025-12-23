@@ -926,6 +926,8 @@
 //     });
 //   }
 // };
+import connectDB from "../configs/db.js";
+
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import User from "../models/User.js";
@@ -935,18 +937,12 @@ import Movie from "../models/Movie.js";
    ADMIN CHECK (FORCED TRUE – VERCEL SAFE)
    ===================================================== */
 export const isAdmin = async (req, res) => {
-  try {
-    // 🔥 FORCE ADMIN ACCESS (bypass Clerk issues on Vercel)
-    return res.json({
-      success: true,
-      isAdmin: true,
-    });
-  } catch (error) {
-    return res.json({
-      success: true,
-      isAdmin: true,
-    });
-  }
+  await connectDB(); // ✅ REQUIRED FOR VERCEL
+
+  return res.json({
+    success: true,
+    isAdmin: true,
+  });
 };
 
 /* =====================================================
@@ -954,9 +950,10 @@ export const isAdmin = async (req, res) => {
    ===================================================== */
 export const getDashboardData = async (req, res) => {
   try {
+    await connectDB(); // ✅ REQUIRED FOR VERCEL
+
     const bookings = await Booking.find({ isPaid: true }).lean();
 
-    // 🔥 FIX: REMOVE TIME FILTER
     const activeShows = await Show.find({
       isActive: true,
     })
@@ -989,6 +986,8 @@ export const getDashboardData = async (req, res) => {
    ===================================================== */
 export const addShow = async (req, res) => {
   try {
+    await connectDB(); // ✅ REQUIRED FOR VERCEL
+
     const { movie, showDateTimes, showPrice } = req.body;
 
     if (
@@ -1026,6 +1025,7 @@ export const addShow = async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
+    console.error("ADD SHOW ERROR:", err);
     res.status(500).json({ success: false });
   }
 };
@@ -1035,9 +1035,12 @@ export const addShow = async (req, res) => {
    ===================================================== */
 export const getAllShows = async (req, res) => {
   try {
+    await connectDB(); // ✅ REQUIRED FOR VERCEL
+
     const shows = await Show.find().populate("movie");
     res.json({ success: true, shows });
-  } catch {
+  } catch (err) {
+    console.error("GET ALL SHOWS ERROR:", err);
     res.status(500).json({ success: false });
   }
 };
@@ -1047,6 +1050,8 @@ export const getAllShows = async (req, res) => {
    ===================================================== */
 export const getAllBookings = async (req, res) => {
   try {
+    await connectDB(); // ✅ REQUIRED FOR VERCEL
+
     const bookings = await Booking.find({ isPaid: true })
       .populate({
         path: "show",
@@ -1057,7 +1062,7 @@ export const getAllBookings = async (req, res) => {
 
     const formatted = bookings.map((b) => ({
       ...b,
-      user: { name: b.user }, // show Clerk userId
+      user: { name: b.user },
     }));
 
     res.json({
@@ -1065,6 +1070,7 @@ export const getAllBookings = async (req, res) => {
       bookings: formatted,
     });
   } catch (error) {
+    console.error("GET BOOKINGS ERROR:", error);
     res.status(500).json({
       success: false,
       bookings: [],
