@@ -1,63 +1,46 @@
-import Navbar from "./components/Navbar";
-import { Route, Routes, useLocation } from "react-router-dom";
-import Home from "./pages/Home";
-import Movies from "./pages/Movies";
-import MovieDetails from "./pages/MovieDetails";
-import SeatLayout from "./pages/SeatLayout";
-import MyBookings from "./pages/MyBookings";
-import Favorite from "./pages/Favorite";
-import { Toaster } from "react-hot-toast";
-import Footer from "./components/Footer";
-import Layout from "./pages/admin/Layout";
-import Dashboard from "./pages/admin/Dashboard";
-import AddShows from "./pages/admin/AddShows";
-import ListShows from "./pages/admin/ListShows";
-import ListBookings from "./pages/admin/ListBookings";
-import { useAppContext } from "./context/AppContext";
-import { SignIn } from "@clerk/clerk-react";
-import Loading from "./components/Loading";
+import { useEffect } from "react";
+import { Outlet } from "react-router-dom";
+import AdminNavbar from "../../components/admin/AdminNavbar";
+import AdminSidebar from "../../components/admin/AdminSidebar";
+import Loading from "../../components/Loading";
+import { useAppContext } from "../../context/AppContext";
 
-const App = () => {
-  const isAdminRoute = useLocation().pathname.startsWith("/admin");
+const Layout = () => {
+  const { isAdmin, fetchIsAdmin } = useAppContext();
 
-  const { user } = useAppContext();
+  // 🔥 IMPORTANT: always verify admin on layout mount
+  useEffect(() => {
+    fetchIsAdmin();
+  }, []);
 
+  // ⏳ While admin status is being checked
+  if (isAdmin === undefined) {
+    return <Loading />;
+  }
+
+  // 🚫 Not an admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500 text-lg font-medium">
+          You are not authorized to access admin panel
+        </p>
+      </div>
+    );
+  }
+
+  // ✅ Authorized admin
   return (
     <>
-      <Toaster />
-      {!isAdminRoute && <Navbar />}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/movies" element={<Movies />} />
-        <Route path="/movies/:id" element={<MovieDetails />} />
-        <Route path="/movies/:id/:date" element={<SeatLayout />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/loading/:nextUrl" element={<Loading />} />
-        <Route path="/favorites" element={<Favorite />} />
-
-
-        {/* Admin Routes */}
-        <Route
-          path="/admin/*"
-          element={
-            user ? (
-              <Layout />
-            ) : (
-              <div className="min-h-screen flex justify-center items-center">
-                <SignIn fallbackRedirectUrl={"/admin"} />
-              </div>
-            )
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="add-shows" element={<AddShows />} />
-          <Route path="list-shows" element={<ListShows />} />
-          <Route path="list-bookings" element={<ListBookings />} />
-        </Route>
-      </Routes>
-      {!isAdminRoute && <Footer />}
+      <AdminNavbar />
+      <div className="flex">
+        <AdminSidebar />
+        <div className="flex-1 px-4 py-10 md:px-10 h-[calc(100vh-64px)] overflow-y-auto">
+          <Outlet />
+        </div>
+      </div>
     </>
   );
 };
 
-export default App;
+export default Layout;
