@@ -80,6 +80,7 @@ const Dashboard = () => {
 
   /* 🔥 REFRESH ON LOGIN + ADD SHOW */
   useEffect(() => {
+      console.log("🔥 Dashboard re-fetch triggered", dashboardRefreshKey);
     if (user) fetchDashboardData();
   }, [user, dashboardRefreshKey]); // 👈 THIS FIXES IT
 

@@ -62,7 +62,8 @@ const AddShows = () => {
       if (data?.success) {
         toast.success("Show added successfully");
 
-        refreshDashboard(); // 🔥 auto refresh dashboard
+        console.log("🔥 refreshDashboard called");
+refreshDashboard();
 
         setSelectedMovie(null);
         setShowPrice("");
