@@ -562,8 +562,12 @@ const Dashboard = () => {
       const token = await getToken();
 
       const { data } = await axios.get("/api/admin/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Cache-Control": "no-store",
+  },
+});
+
 
       if (data?.success && data.dashboardData) {
         setDashboardData(data.dashboardData);
