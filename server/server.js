@@ -449,14 +449,14 @@ const port = process.env.PORT || 10000;
 /* ================= DB ================= */
 await connectDB();
 
-/* ================= STRIPE WEBHOOK (FIRST & ISOLATED) ================= */
+/* ================= STRIPE WEBHOOK (FIRST, RAW ONLY) ================= */
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhooks
 );
 
-/* ================= CORS (FINAL FIX) ================= */
+/* ================= CORS ================= */
 app.use(
   cors({
     origin: [
@@ -468,9 +468,6 @@ app.use(
     credentials: true,
   })
 );
-
-/* 🔥 PREFLIGHT */
-app.options("*", cors());
 
 /* ================= BODY PARSER ================= */
 app.use(express.json());
