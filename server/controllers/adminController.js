@@ -956,11 +956,12 @@ export const getDashboardData = async (req, res) => {
   try {
     const bookings = await Booking.find({ isPaid: true }).lean();
 
+    // 🔥 FIX: REMOVE TIME FILTER
     const activeShows = await Show.find({
-      showDateTime: { $gte: new Date() },
       isActive: true,
     })
       .populate("movie")
+      .sort({ showDateTime: 1 })
       .lean();
 
     const totalUser = await User.countDocuments();
@@ -978,6 +979,7 @@ export const getDashboardData = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("DASHBOARD ERROR:", err);
     res.status(500).json({ success: false });
   }
 };

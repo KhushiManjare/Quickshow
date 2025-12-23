@@ -117,12 +117,12 @@ const AddShows = () => {
           type="datetime-local"
           value={dateTimeInput}
           onChange={(e) => setDateTimeInput(e.target.value)}
-          className="p-2 border rounded w-72 text-black"
+          className="p-2 border  bg-white rounded w-72 text-black"
         />
 
         <button
           onClick={addDateTime}
-          className="px-4 py-2 bg-black text-white rounded"
+          className="px-4 py-2 bg-white text-black rounded"
         >
           Add
         </button>
