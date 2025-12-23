@@ -230,6 +230,7 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   const value = {
+    axios,
     user,
     getToken,
     navigate,

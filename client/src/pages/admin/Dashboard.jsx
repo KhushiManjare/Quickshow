@@ -513,6 +513,7 @@ import toast from "react-hot-toast";
 const Dashboard = () => {
   // ✅ CORRECT CONTEXT USAGE (NO AXIOS HERE)
   const {
+    axios,
     getToken,
     user,
     image_base_url,
