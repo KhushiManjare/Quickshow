@@ -864,29 +864,27 @@ export const createBooking = async (req, res) => {
     show.markModified("occupiedSeats");
     await show.save();
 
-    
-
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "inr",
-            product_data: {
-              name: show.movie.title,
-            },
-            unit_amount: amount * 100,
-          },
-          quantity: 1,
+  mode: "payment",
+  payment_method_types: ["card"],
+  line_items: [
+    {
+      price_data: {
+        currency: "inr",
+        product_data: {
+          name: show.movie?.title || "Movie Ticket",
         },
-      ],
-      success_url: `${origin}/my-bookings`,
-      cancel_url: `${origin}/my-bookings`,
-      metadata: {
-        bookingId: booking._id.toString(),
+        unit_amount: Math.round(amount * 100),
       },
-    });
+      quantity: 1,
+    },
+  ],
+  success_url: `${origin}/my-bookings`,
+  cancel_url: `${origin}/my-bookings`,
+  metadata: {
+    bookingId: booking._id.toString(),
+  },
+});
 
     booking.paymentLink = session.url;
     await booking.save();
