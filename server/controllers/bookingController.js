@@ -879,8 +879,9 @@ export const createBooking = async (req, res) => {
       quantity: 1,
     },
   ],
-  success_url: `${origin}/my-bookings`,
-  cancel_url: `${origin}/my-bookings`,
+  success_url: `${origin}/my-bookings?payment=success`,
+cancel_url: `${origin}/my-bookings`,
+
   metadata: {
     bookingId: booking._id.toString(),
   },
