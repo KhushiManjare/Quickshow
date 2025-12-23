@@ -459,7 +459,7 @@ app.post(
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
+      "https://quickshow-backend-steel.vercel.app",
       "https://quickshow-frontend-iota.vercel.app",
     ],
     credentials: true,
