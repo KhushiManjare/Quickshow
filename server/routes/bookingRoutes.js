@@ -19,10 +19,9 @@ import {
 
 const bookingRouter = express.Router();
 
-// 🔐 PROTECT CREATE BOOKING
+// 🔐 PROTECTED ROUTES
 bookingRouter.post("/create", requireAuth(), createBooking);
-
-// ❌ seats API can be public
 bookingRouter.get("/seats/:showId", getOccupiedSeats);
 
 export default bookingRouter;
+
