@@ -900,13 +900,29 @@ export const getAllShows = async (req, res) => {
    ===================================================== */
 export const getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find().populate({
-      path: "show",
-      populate: "movie",
-    });
+    const bookings = await Booking.find({ isPaid: true })
+      .populate({
+        path: "show",
+        populate: { path: "movie" },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ success: true, bookings });
-  } catch {
-    res.status(500).json({ success: false });
+    // 🔥 Attach userId safely for frontend
+    const formatted = bookings.map((b) => ({
+      ...b,
+      user: { name: b.user }, // show Clerk userId as name
+    }));
+
+    res.json({
+      success: true,
+      bookings: formatted,
+    });
+  } catch (error) {
+    console.error("ADMIN BOOKINGS ERROR:", error.message);
+    res.status(500).json({
+      success: false,
+      bookings: [],
+    });
   }
 };

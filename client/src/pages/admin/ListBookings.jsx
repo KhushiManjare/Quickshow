@@ -91,7 +91,7 @@ const ListBookings = () => {
       const token = await getToken();
       if (!token) return;
 
-      const { data } = await axios.get("/api/admin/all-bookings", {
+      const { data } = await axios.get("/api/admin/bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
