@@ -144,10 +144,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "../../context/AppContext";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const AddShows = () => {
-  const { getToken, image_base_url, refreshDashboard,navigate } = useAppContext();
+  const { getToken, image_base_url } = useAppContext();
+  const navigate = useNavigate(); // ✅ CORRECT
 
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -194,17 +196,11 @@ const AddShows = () => {
 
   /* ================= ADD SHOW ================= */
   const addShow = async () => {
-    if (!selectedMovie) {
-      return toast.error("Select a movie");
-    }
-
-    if (!showPrice || Number(showPrice) <= 0) {
+    if (!selectedMovie) return toast.error("Select a movie");
+    if (!showPrice || Number(showPrice) <= 0)
       return toast.error("Enter valid show price");
-    }
-
-    if (showDateTimes.length === 0) {
+    if (showDateTimes.length === 0)
       return toast.error("Add at least one show time");
-    }
 
     try {
       setLoading(true);
@@ -216,12 +212,10 @@ const AddShows = () => {
       }
 
       const payload = {
-        movie: selectedMovie,          // TMDB object
+        movie: selectedMovie,
         showPrice: Number(showPrice),
-        showDateTimes: [...showDateTimes],
+        showDateTimes,
       };
-
-      console.log("🔥 ADD SHOW PAYLOAD:", payload);
 
       const { data } = await axios.post(
         "/api/admin/add-show",
@@ -233,9 +227,10 @@ const AddShows = () => {
 
       if (data?.success) {
         toast.success("Show added successfully");
-             navigate("/admin/dashboard");
-        
-        // reset state
+
+        // 🔥 FORCE DASHBOARD REFRESH VIA NAVIGATION
+        navigate("/admin", { replace: true });
+
         setSelectedMovie(null);
         setShowPrice("");
         setShowDateTimes([]);
@@ -302,7 +297,7 @@ const AddShows = () => {
         </button>
       </div>
 
-      {/* SHOW TIMES PREVIEW */}
+      {/* SHOW TIMES */}
       {showDateTimes.length > 0 && (
         <ul className="mt-3 text-sm text-gray-300">
           {showDateTimes.map((dt, i) => (
