@@ -373,7 +373,6 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./configs/db.js";
-import { clerkMiddleware } from "@clerk/express";
 import { serve } from "inngest/express";
 
 import { inngest, functions } from "./inngest/index.js";
@@ -388,16 +387,25 @@ const port = process.env.PORT || 3000;
 
 await connectDB();
 
-/* STRIPE WEBHOOK */
+/* 🔥 STRIPE WEBHOOK FIRST */
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhooks
 );
 
-app.use(cors());
+/* 🔥 CORS (ALLOW BOTH DOMAINS) */
+app.use(
+  cors({
+    origin: [
+      "https://quickshow-tomo.vercel.app",
+      "https://quickshow-ceq6.vercel.app",
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
-app.use(clerkMiddleware());
 
 app.get("/", (req, res) => res.send("Server is Live"));
 
