@@ -583,7 +583,7 @@ const Dashboard = () => {
       console.log("🔥 Dashboard re-fetch triggered", dashboardRefreshKey);
       fetchDashboardData();
     }
-  }, [user, dashboardRefreshKey]);
+  }, [user]);
 
   if (loading) return <Loading />;
 

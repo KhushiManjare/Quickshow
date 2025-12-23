@@ -147,7 +147,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const AddShows = () => {
-  const { getToken, image_base_url, refreshDashboard } = useAppContext();
+  const { getToken, image_base_url, refreshDashboard,navigate } = useAppContext();
 
   const [movies, setMovies] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -233,10 +233,8 @@ const AddShows = () => {
 
       if (data?.success) {
         toast.success("Show added successfully");
-
-        console.log("🔥 refreshDashboard called");
-        refreshDashboard(); // ✅ THIS ALWAYS FIRES
-
+             navigate("/admin/dashboard");
+        
         // reset state
         setSelectedMovie(null);
         setShowPrice("");
