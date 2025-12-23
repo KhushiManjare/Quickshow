@@ -233,6 +233,7 @@ export const AppProvider = ({ children }) => {
     user,
     getToken,
     navigate,
+    isAdmin,
     fetchIsAdmin,
     shows,
     favoriteMovies,
