@@ -1,931 +1,3 @@
-// // // // // // // import Booking from "../models/Booking.js";
-// // // // // // // import Show from "../models/Show.js";
-// // // // // // // import User from "../models/User.js";
-// // // // // // // import Movie from "../models/Movie.js";
-
-// // // // // // // /* ================= ADMIN CHECK ================= */
-// // // // // // // export const isAdmin = async (req, res) => {
-// // // // // // //   res.json({ success: true, isAdmin: true });
-// // // // // // // };
-
-// // // // // // // /* ================= DASHBOARD ================= */
-// // // // // // // export const getDashboardData = async (req, res) => {
-// // // // // // //   try {
-// // // // // // //     const bookings = await Booking.find({ isPaid: true });
-// // // // // // //     const activeShows = await Show.find({
-// // // // // // //       showDateTime: { $gte: new Date() },
-// // // // // // //     }).populate("movie");
-
-// // // // // // //     const totalUser = await User.countDocuments();
-
-// // // // // // //     res.json({
-// // // // // // //       success: true,
-// // // // // // //       dashboardData: {
-// // // // // // //         totalBookings: bookings.length,
-// // // // // // //         totalRevenue: bookings.reduce((a, b) => a + b.amount, 0),
-// // // // // // //         activeShows,
-// // // // // // //         totalUser,
-// // // // // // //       },
-// // // // // // //     });
-// // // // // // //   } catch (err) {
-// // // // // // //     console.error("Dashboard Error:", err);
-// // // // // // //     res.status(500).json({ success: false });
-// // // // // // //   }
-// // // // // // // };
-
-// // // // // // // /* ================= ADD SHOW ================= */
-// // // // // // // export const addShow = async (req, res) => {
-// // // // // // //   try {
-// // // // // // //     const { movie, showDateTimes, showPrice } = req.body;
-
-// // // // // // //     if (!movie || !showDateTimes?.length || !showPrice) {
-// // // // // // //       return res.status(400).json({ success: false });
-// // // // // // //     }
-
-// // // // // // //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// // // // // // //     if (!savedMovie) {
-// // // // // // //       savedMovie = await Movie.create({
-// // // // // // //         tmdbId: movie.id,
-// // // // // // //         title: movie.title,
-// // // // // // //         overview: movie.overview,
-// // // // // // //         poster_path: movie.poster_path,
-// // // // // // //         backdrop_path: movie.backdrop_path,
-// // // // // // //         release_date: movie.release_date,
-// // // // // // //         vote_average: movie.vote_average,
-// // // // // // //         vote_count: movie.vote_count,
-// // // // // // //       });
-// // // // // // //     }
-
-// // // // // // //     const shows = showDateTimes.map((dt) => ({
-// // // // // // //       movie: savedMovie._id,
-// // // // // // //       showDateTime: new Date(dt),
-// // // // // // //       showPrice,
-// // // // // // //     }));
-
-// // // // // // //     await Show.insertMany(shows);
-
-// // // // // // //     res.json({ success: true, message: "Show added successfully" });
-// // // // // // //   } catch (err) {
-// // // // // // //     console.error("Add Show Error:", err);
-// // // // // // //     res.status(500).json({ success: false });
-// // // // // // //   }
-// // // // // // // };
-
-// // // // // // // /* ================= ALL SHOWS ================= */
-// // // // // // // export const getAllShows = async (req, res) => {
-// // // // // // //   try {
-// // // // // // //     const shows = await Show.find().populate("movie");
-// // // // // // //     res.json({ success: true, shows });
-// // // // // // //   } catch {
-// // // // // // //     res.status(500).json({ success: false });
-// // // // // // //   }
-// // // // // // // };
-
-// // // // // // // /* ================= BOOKINGS ================= */
-// // // // // // // export const getAllBookings = async (req, res) => {
-// // // // // // //   try {
-// // // // // // //     const bookings = await Booking.find()
-// // // // // // //       .populate("user")
-// // // // // // //       .populate({ path: "show", populate: "movie" });
-
-// // // // // // //     res.json({ success: true, bookings });
-// // // // // // //   } catch {
-// // // // // // //     res.status(500).json({ success: false });
-// // // // // // //   }
-// // // // // // // };
-// // // // // // import Booking from "../models/Booking.js";
-// // // // // // import Show from "../models/Show.js";
-// // // // // // import User from "../models/User.js";
-// // // // // // import Movie from "../models/Movie.js";
-
-// // // // // // /* ================= ADMIN CHECK ================= */
-// // // // // // export const isAdmin = async (req, res) => {
-// // // // // //   return res.json({ success: true, isAdmin: true });
-// // // // // // };
-
-// // // // // // /* ================= DASHBOARD ================= */
-// // // // // // export const getDashboardData = async (req, res) => {
-// // // // // //   try {
-// // // // // //     const bookings = await Booking.find({ isPaid: true });
-// // // // // //     const activeShows = await Show.find({
-// // // // // //       showDateTime: { $gte: new Date() },
-// // // // // //     }).populate("movie");
-
-// // // // // //     const totalUser = await User.countDocuments();
-
-// // // // // //     res.json({
-// // // // // //       success: true,
-// // // // // //       dashboardData: {
-// // // // // //         totalBookings: bookings.length,
-// // // // // //         totalRevenue: bookings.reduce((sum, b) => sum + b.amount, 0),
-// // // // // //         activeShows,
-// // // // // //         totalUser,
-// // // // // //       },
-// // // // // //     });
-// // // // // //   } catch (err) {
-// // // // // //     console.error("Dashboard Error:", err);
-// // // // // //     res.status(500).json({ success: false });
-// // // // // //   }
-// // // // // // };
-
-// // // // // // /* ================= ADD SHOW (AUTO-RECREATE MOVIE) ================= */
-// // // // // // export const addShow = async (req, res) => {
-// // // // // //   try {
-// // // // // //     const { movie, showDateTimes, showPrice } = req.body;
-
-// // // // // //     if (
-// // // // // //       !movie ||
-// // // // // //       !movie.id ||
-// // // // // //       !Array.isArray(showDateTimes) ||
-// // // // // //       showDateTimes.length === 0 ||
-// // // // // //       !showPrice
-// // // // // //     ) {
-// // // // // //       return res.status(400).json({
-// // // // // //         success: false,
-// // // // // //         message: "Invalid data",
-// // // // // //       });
-// // // // // //     }
-
-// // // // // //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// // // // // //     if (!savedMovie) {
-// // // // // //       savedMovie = await Movie.create({
-// // // // // //         tmdbId: movie.id,
-// // // // // //         title: movie.title,
-// // // // // //         overview: movie.overview || "",
-// // // // // //         poster_path: movie.poster_path || "",
-// // // // // //         backdrop_path: movie.backdrop_path || "",
-// // // // // //         release_date: movie.release_date || null,
-// // // // // //         vote_average: movie.vote_average || 0,
-// // // // // //         vote_count: movie.vote_count || 0,
-// // // // // //         original_language: movie.original_language || "en",
-// // // // // //         genres: movie.genres || [],
-// // // // // //       });
-// // // // // //     }
-
-// // // // // //     const shows = showDateTimes.map((dt) => ({
-// // // // // //       movie: savedMovie._id,
-// // // // // //       showDateTime: new Date(dt),
-// // // // // //       showPrice: Number(showPrice),
-// // // // // //       isActive: true,
-// // // // // //     }));
-
-// // // // // //     await Show.insertMany(shows);
-
-// // // // // //     res.json({
-// // // // // //       success: true,
-// // // // // //       message: "Show added successfully",
-// // // // // //     });
-// // // // // //   } catch (err) {
-// // // // // //     console.error("ADD SHOW ERROR:", err);
-// // // // // //     res.status(500).json({ success: false });
-// // // // // //   }
-// // // // // // };
-
-// // // // // // /* ================= ALL SHOWS ================= */
-// // // // // // export const getAllShows = async (req, res) => {
-// // // // // //   try {
-// // // // // //     const shows = await Show.find().populate("movie");
-// // // // // //     res.json({ success: true, shows });
-// // // // // //   } catch {
-// // // // // //     res.status(500).json({ success: false });
-// // // // // //   }
-// // // // // // };
-
-// // // // // // /* ================= ALL BOOKINGS ================= */
-// // // // // // export const getAllBookings = async (req, res) => {
-// // // // // //   try {
-// // // // // //     const bookings = await Booking.find()
-// // // // // //       .populate("user")
-// // // // // //       .populate({ path: "show", populate: "movie" });
-
-// // // // // //     res.json({ success: true, bookings });
-// // // // // //   } catch {
-// // // // // //     res.status(500).json({ success: false });
-// // // // // //   }
-// // // // // // };
-// // // // // import Booking from "../models/Booking.js";
-// // // // // import Show from "../models/Show.js";
-// // // // // import User from "../models/User.js";
-// // // // // import Movie from "../models/Movie.js";
-
-// // // // // /* ================= ADMIN CHECK ================= */
-// // // // // export const isAdmin = async (req, res) => {
-// // // // //   return res.json({ success: true, isAdmin: true });
-// // // // // };
-
-// // // // // /* ================= DASHBOARD ================= */
-// // // // // export const getDashboardData = async (req, res) => {
-// // // // //   try {
-// // // // //     const bookings = await Booking.find({ isPaid: true });
-// // // // //     const activeShows = await Show.find({
-// // // // //       showDateTime: { $gte: new Date() },
-// // // // //     }).populate("movie");
-
-// // // // //     const totalUser = await User.countDocuments();
-
-// // // // //     res.json({
-// // // // //       success: true,
-// // // // //       dashboardData: {
-// // // // //         totalBookings: bookings.length,
-// // // // //         totalRevenue: bookings.reduce((sum, b) => sum + b.amount, 0),
-// // // // //         activeShows,
-// // // // //         totalUser,
-// // // // //       },
-// // // // //     });
-// // // // //   } catch (err) {
-// // // // //     console.error("Dashboard Error:", err);
-// // // // //     res.status(500).json({ success: false });
-// // // // //   }
-// // // // // };
-
-// // // // // /* ================= ADD SHOW (FIXED & BULLETPROOF) ================= */
-// // // // // export const addShow = async (req, res) => {
-// // // // //   try {
-// // // // //     const { movie, showDateTimes, showPrice } = req.body;
-
-// // // // //     if (
-// // // // //       !movie ||
-// // // // //       !movie.id ||
-// // // // //       !Array.isArray(showDateTimes) ||
-// // // // //       showDateTimes.length === 0 ||
-// // // // //       !showPrice
-// // // // //     ) {
-// // // // //       return res.status(400).json({
-// // // // //         success: false,
-// // // // //         message: "Invalid data",
-// // // // //       });
-// // // // //     }
-
-// // // // //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// // // // //     if (!savedMovie) {
-// // // // //       savedMovie = await Movie.create({
-// // // // //         tmdbId: movie.id,
-// // // // //         title: movie.title || "Untitled Movie",
-// // // // //         overview: movie.overview || "",
-// // // // //         poster_path: movie.poster_path || "",
-// // // // //         backdrop_path: movie.backdrop_path || "",
-// // // // //         release_date: movie.release_date || "",
-// // // // //         vote_average: movie.vote_average || 0,
-// // // // //         vote_count: movie.vote_count || 0,
-// // // // //         popularity: movie.popularity || 0,
-// // // // //         runtime: movie.runtime || null,
-// // // // //         genres: movie.genres || [],
-// // // // //       });
-// // // // //     }
-
-// // // // //     const shows = showDateTimes.map((dt) => ({
-// // // // //       movie: savedMovie._id,
-// // // // //       showDateTime: new Date(dt),
-// // // // //       showPrice: Number(showPrice),
-// // // // //       isActive: true,
-// // // // //     }));
-
-// // // // //     await Show.insertMany(shows);
-
-// // // // //     res.json({
-// // // // //       success: true,
-// // // // //       message: "Show added successfully",
-// // // // //     });
-// // // // //   } catch (err) {
-// // // // //     console.error("ADD SHOW ERROR:", err);
-// // // // //     res.status(500).json({ success: false });
-// // // // //   }
-// // // // // };
-
-// // // // // /* ================= ALL SHOWS ================= */
-// // // // // export const getAllShows = async (req, res) => {
-// // // // //   try {
-// // // // //     const shows = await Show.find().populate("movie");
-// // // // //     res.json({ success: true, shows });
-// // // // //   } catch {
-// // // // //     res.status(500).json({ success: false });
-// // // // //   }
-// // // // // };
-
-// // // // // /* ================= ALL BOOKINGS ================= */
-// // // // // export const getAllBookings = async (req, res) => {
-// // // // //   try {
-// // // // //     const bookings = await Booking.find()
-// // // // //       .populate({ path: "show", populate: "movie" });
-
-// // // // //     res.json({ success: true, bookings });
-// // // // //   } catch {
-// // // // //     res.status(500).json({ success: false });
-// // // // //   }
-// // // // // };
-// // // // import Booking from "../models/Booking.js";
-// // // // import Show from "../models/Show.js";
-// // // // import User from "../models/User.js";
-// // // // import Movie from "../models/Movie.js";
-
-// // // // /* ================= ADMIN CHECK ================= */
-// // // // export const isAdmin = async (req, res) => {
-// // // //   try {
-// // // //     // if token reached here → admin verified by middleware
-// // // //     return res.json({ success: true, isAdmin: true });
-// // // //   } catch (err) {
-// // // //     return res.status(401).json({ success: false, isAdmin: false });
-// // // //   }
-// // // // };
-
-// // // // /* ================= DASHBOARD ================= */
-// // // // export const getDashboardData = async (req, res) => {
-// // // //   try {
-// // // //     const bookings = await Booking.find({ isPaid: true });
-
-// // // //     const activeShows = await Show.find({
-// // // //       showDateTime: { $gte: new Date() },
-// // // //     })
-// // // //       .populate("movie")
-// // // //       .lean();
-
-// // // //     const totalUser = await User.countDocuments();
-
-// // // //     res.json({
-// // // //       success: true,
-// // // //       dashboardData: {
-// // // //         totalBookings: bookings.length,
-// // // //         totalRevenue: bookings.reduce(
-// // // //           (sum, b) => sum + Number(b.amount || 0),
-// // // //           0
-// // // //         ),
-// // // //         activeShows: activeShows.filter((s) => s.movie),
-// // // //         totalUser,
-// // // //       },
-// // // //     });
-// // // //   } catch (err) {
-// // // //     console.error("Dashboard Error:", err.message);
-// // // //     res.status(500).json({ success: false, message: "Dashboard failed" });
-// // // //   }
-// // // // };
-
-// // // // /* ================= ADD SHOW ================= */
-// // // // export const addShow = async (req, res) => {
-// // // //   try {
-// // // //     const { movie, showDateTimes, showPrice } = req.body;
-
-// // // //     if (!movie?.id || !Array.isArray(showDateTimes) || !showPrice) {
-// // // //       return res.status(400).json({ success: false, message: "Invalid data" });
-// // // //     }
-
-// // // //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// // // //     if (!savedMovie) {
-// // // //       savedMovie = await Movie.create({
-// // // //         tmdbId: movie.id,
-// // // //         title: movie.title || "Untitled",
-// // // //         overview: movie.overview || "",
-// // // //         poster_path: movie.poster_path || "",
-// // // //         backdrop_path: movie.backdrop_path || "",
-// // // //         release_date: movie.release_date || "",
-// // // //         vote_average: movie.vote_average || 0,
-// // // //         vote_count: movie.vote_count || 0,
-// // // //         popularity: movie.popularity || 0,
-// // // //         runtime: movie.runtime || null,
-// // // //         genres: movie.genres || [],
-// // // //       });
-// // // //     }
-
-// // // //     const shows = showDateTimes.map((dt) => ({
-// // // //       movie: savedMovie._id,
-// // // //       showDateTime: new Date(dt),
-// // // //       showPrice: Number(showPrice),
-// // // //       isActive: true,
-// // // //     }));
-
-// // // //     await Show.insertMany(shows);
-
-// // // //     res.json({ success: true, message: "Show added successfully" });
-// // // //   } catch (err) {
-// // // //     console.error("ADD SHOW ERROR:", err.message);
-// // // //     res.status(500).json({ success: false });
-// // // //   }
-// // // // };
-
-// // // // /* ================= ALL SHOWS ================= */
-// // // // export const getAllShows = async (req, res) => {
-// // // //   try {
-// // // //     const shows = await Show.find().populate("movie");
-// // // //     res.json({ success: true, shows });
-// // // //   } catch {
-// // // //     res.status(500).json({ success: false });
-// // // //   }
-// // // // };
-
-// // // // /* ================= ALL BOOKINGS ================= */
-// // // // export const getAllBookings = async (req, res) => {
-// // // //   try {
-// // // //     const bookings = await Booking.find().populate({
-// // // //       path: "show",
-// // // //       populate: "movie",
-// // // //     });
-
-// // // //     res.json({ success: true, bookings });
-// // // //   } catch {
-// // // //     res.status(500).json({ success: false });
-// // // //   }
-// // // // };
-// // // import Booking from "../models/Booking.js";
-// // // import Show from "../models/Show.js";
-// // // import User from "../models/User.js";
-// // // import Movie from "../models/Movie.js";
-
-// // // /* =====================================================
-// // //    ADMIN CHECK (SECURE – EMAIL BASED)
-// // //    ===================================================== */
-// // // export const isAdmin = async (req, res) => {
-// // //   try {
-// // //     const { sessionClaims } = req.auth();
-
-// // //     if (!sessionClaims) {
-// // //       return res.json({ success: true, isAdmin: false });
-// // //     }
-
-// // //     // Clerk may expose email in different keys
-// // //     const email =
-// // //       sessionClaims.email ||
-// // //       sessionClaims.email_address ||
-// // //       sessionClaims.primary_email ||
-// // //       sessionClaims?.user?.email;
-
-// // //     // 🔐 CHANGE THIS TO YOUR EMAIL
-// // //     const ADMIN_EMAIL = "khushimanjare65@gmail.com";
-
-// // //     const isAdmin = email === ADMIN_EMAIL;
-
-// // //     return res.json({
-// // //       success: true,
-// // //       isAdmin,
-// // //     });
-// // //   } catch (error) {
-// // //     console.error("IS ADMIN ERROR:", error.message);
-// // //     return res.json({
-// // //       success: true,
-// // //       isAdmin: false,
-// // //     });
-// // //   }
-// // // };
-
-// // // /* =====================================================
-// // //    DASHBOARD DATA
-// // //    ===================================================== */
-// // // export const getDashboardData = async (req, res) => {
-// // //   try {
-// // //     const bookings = await Booking.find({ isPaid: true }).lean();
-
-// // //     const activeShows = await Show.find({
-// // //       showDateTime: { $gte: new Date() },
-// // //       isActive: true,
-// // //     })
-// // //       .populate("movie")
-// // //       .lean();
-
-// // //     const totalUser = await User.countDocuments();
-
-// // //     res.json({
-// // //       success: true,
-// // //       dashboardData: {
-// // //         totalBookings: bookings.length,
-// // //         totalRevenue: bookings.reduce(
-// // //           (sum, b) => sum + Number(b.amount || 0),
-// // //           0
-// // //         ),
-// // //         activeShows: activeShows.filter((s) => s.movie),
-// // //         totalUser,
-// // //       },
-// // //     });
-// // //   } catch (err) {
-// // //     console.error("DASHBOARD ERROR:", err.message);
-// // //     res.status(500).json({
-// // //       success: false,
-// // //       message: "Failed to load dashboard",
-// // //     });
-// // //   }
-// // // };
-
-// // // /* =====================================================
-// // //    ADD SHOW (SAFE & BULLETPROOF)
-// // //    ===================================================== */
-// // // export const addShow = async (req, res) => {
-// // //   try {
-// // //     const { movie, showDateTimes, showPrice } = req.body;
-
-// // //     if (
-// // //       !movie?.id ||
-// // //       !Array.isArray(showDateTimes) ||
-// // //       showDateTimes.length === 0 ||
-// // //       !showPrice
-// // //     ) {
-// // //       return res.status(400).json({
-// // //         success: false,
-// // //         message: "Invalid show data",
-// // //       });
-// // //     }
-
-// // //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// // //     if (!savedMovie) {
-// // //       savedMovie = await Movie.create({
-// // //         tmdbId: movie.id,
-// // //         title: movie.title || "Untitled Movie",
-// // //         overview: movie.overview || "",
-// // //         poster_path: movie.poster_path || "",
-// // //         backdrop_path: movie.backdrop_path || "",
-// // //         release_date: movie.release_date || "",
-// // //         vote_average: movie.vote_average || 0,
-// // //         vote_count: movie.vote_count || 0,
-// // //         popularity: movie.popularity || 0,
-// // //         runtime: movie.runtime || null,
-// // //         genres: movie.genres || [],
-// // //       });
-// // //     }
-
-// // //     const shows = showDateTimes.map((dt) => ({
-// // //       movie: savedMovie._id,
-// // //       showDateTime: new Date(dt),
-// // //       showPrice: Number(showPrice),
-// // //       isActive: true,
-// // //     }));
-
-// // //     await Show.insertMany(shows);
-
-// // //     res.json({
-// // //       success: true,
-// // //       message: "Show added successfully",
-// // //     });
-// // //   } catch (err) {
-// // //     console.error("ADD SHOW ERROR:", err.message);
-// // //     res.status(500).json({
-// // //       success: false,
-// // //       message: "Failed to add show",
-// // //     });
-// // //   }
-// // // };
-
-// // // /* =====================================================
-// // //    ALL SHOWS
-// // //    ===================================================== */
-// // // export const getAllShows = async (req, res) => {
-// // //   try {
-// // //     const shows = await Show.find().populate("movie");
-// // //     res.json({ success: true, shows });
-// // //   } catch (error) {
-// // //     res.status(500).json({
-// // //       success: false,
-// // //       message: "Failed to load shows",
-// // //     });
-// // //   }
-// // // };
-
-// // // /* =====================================================
-// // //    ALL BOOKINGS
-// // //    ===================================================== */
-// // // export const getAllBookings = async (req, res) => {
-// // //   try {
-// // //     const bookings = await Booking.find().populate({
-// // //       path: "show",
-// // //       populate: "movie",
-// // //     });
-
-// // //     res.json({ success: true, bookings });
-// // //   } catch (error) {
-// // //     res.status(500).json({
-// // //       success: false,
-// // //       message: "Failed to load bookings",
-// // //     });
-// // //   }
-// // // };
-// // import Booking from "../models/Booking.js";
-// // import Show from "../models/Show.js";
-// // import User from "../models/User.js";
-// // import Movie from "../models/Movie.js";
-
-// // /* =====================================================
-// //    ADMIN CHECK (EMAIL BASED – 100% WORKING)
-// //    ===================================================== */
-
-// // export const isAdmin = async (req, res) => {
-// //   try {
-// //     const { userId } = req.auth();
-
-// //     if (!userId) {
-// //       return res.json({ success: true, isAdmin: false });
-// //     }
-
-// //     // 🔥 FETCH USER FROM CLERK
-// //     const user = await clerkClient.users.getUser(userId);
-
-// //     const userEmail = user.emailAddresses?.[0]?.emailAddress;
-
-// //     // 🔐 YOUR ADMIN EMAIL
-// //     const ADMIN_EMAIL = "khushimanjare49@gmail.com";
-
-// //     const isAdmin = userEmail === ADMIN_EMAIL;
-
-// //     console.log("ADMIN CHECK:", {
-// //       userId,
-// //       userEmail,
-// //       isAdmin,
-// //     });
-
-// //     return res.json({
-// //       success: true,
-// //       isAdmin,
-// //     });
-// //   } catch (error) {
-// //     console.error("IS ADMIN ERROR:", error.message);
-// //     return res.json({
-// //       success: true,
-// //       isAdmin: false,
-// //     });
-// //   }
-// // };
-// // /* =====================================================
-// //    DASHBOARD DATA
-// //    ===================================================== */
-// // export const getDashboardData = async (req, res) => {
-// //   try {
-// //     const bookings = await Booking.find({ isPaid: true }).lean();
-
-// //     const activeShows = await Show.find({
-// //       showDateTime: { $gte: new Date() },
-// //       isActive: true,
-// //     })
-// //       .populate("movie")
-// //       .lean();
-
-// //     const totalUser = await User.countDocuments();
-
-// //     res.json({
-// //       success: true,
-// //       dashboardData: {
-// //         totalBookings: bookings.length,
-// //         totalRevenue: bookings.reduce(
-// //           (sum, b) => sum + Number(b.amount || 0),
-// //           0
-// //         ),
-// //         activeShows: activeShows.filter((s) => s.movie),
-// //         totalUser,
-// //       },
-// //     });
-// //   } catch (err) {
-// //     console.error("DASHBOARD ERROR:", err.message);
-// //     res.status(500).json({
-// //       success: false,
-// //       message: "Failed to load dashboard",
-// //     });
-// //   }
-// // };
-
-// // /* =====================================================
-// //    ADD SHOW
-// //    ===================================================== */
-// // export const addShow = async (req, res) => {
-// //   try {
-// //     const { movie, showDateTimes, showPrice } = req.body;
-
-// //     if (
-// //       !movie?.id ||
-// //       !Array.isArray(showDateTimes) ||
-// //       showDateTimes.length === 0 ||
-// //       !showPrice
-// //     ) {
-// //       return res.status(400).json({
-// //         success: false,
-// //         message: "Invalid show data",
-// //       });
-// //     }
-
-// //     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-// //     if (!savedMovie) {
-// //       savedMovie = await Movie.create({
-// //         tmdbId: movie.id,
-// //         title: movie.title || "Untitled Movie",
-// //         overview: movie.overview || "",
-// //         poster_path: movie.poster_path || "",
-// //         backdrop_path: movie.backdrop_path || "",
-// //         release_date: movie.release_date || "",
-// //         vote_average: movie.vote_average || 0,
-// //         vote_count: movie.vote_count || 0,
-// //         popularity: movie.popularity || 0,
-// //         runtime: movie.runtime || null,
-// //         genres: movie.genres || [],
-// //       });
-// //     }
-
-// //     const shows = showDateTimes.map((dt) => ({
-// //       movie: savedMovie._id,
-// //       showDateTime: new Date(dt),
-// //       showPrice: Number(showPrice),
-// //       isActive: true,
-// //     }));
-
-// //     await Show.insertMany(shows);
-
-// //     res.json({
-// //       success: true,
-// //       message: "Show added successfully",
-// //     });
-// //   } catch (err) {
-// //     console.error("ADD SHOW ERROR:", err.message);
-// //     res.status(500).json({
-// //       success: false,
-// //       message: "Failed to add show",
-// //     });
-// //   }
-// // };
-
-// // /* =====================================================
-// //    ALL SHOWS
-// //    ===================================================== */
-// // export const getAllShows = async (req, res) => {
-// //   try {
-// //     const shows = await Show.find().populate("movie");
-// //     res.json({ success: true, shows });
-// //   } catch {
-// //     res.status(500).json({
-// //       success: false,
-// //       message: "Failed to load shows",
-// //     });
-// //   }
-// // };
-
-// // /* =====================================================
-// //    ALL BOOKINGS
-// //    ===================================================== */
-// // export const getAllBookings = async (req, res) => {
-// //   try {
-// //     const bookings = await Booking.find().populate({
-// //       path: "show",
-// //       populate: "movie",
-// //     });
-
-// //     res.json({ success: true, bookings });
-// //   } catch {
-// //     res.status(500).json({
-// //       success: false,
-// //       message: "Failed to load bookings",
-// //     });
-// //   }
-// // };
-// import Booking from "../models/Booking.js";
-// import Show from "../models/Show.js";
-// import User from "../models/User.js";
-// import Movie from "../models/Movie.js";
-// import { clerkClient } from "@clerk/clerk-sdk-node";
-
-// /* =====================================================
-//    ADMIN CHECK (EMAIL BASED)
-//    ===================================================== */
-// export const isAdmin = async (req, res) => {
-//   try {
-//     const { userId } = req.auth();
-
-//     if (!userId) {
-//       return res.json({ success: true, isAdmin: false });
-//     }
-
-//     const user = await clerkClient.users.getUser(userId);
-//     const userEmail = user.emailAddresses?.[0]?.emailAddress;
-
-//     const ADMIN_EMAIL = "khushimanjare49@gmail.com";
-
-//     const isAdmin = userEmail === ADMIN_EMAIL;
-
-//     console.log("ADMIN CHECK:", { userEmail, isAdmin });
-
-//     return res.json({ success: true, isAdmin });
-//   } catch (error) {
-//     console.error("IS ADMIN ERROR:", error.message);
-//     return res.json({ success: true, isAdmin: false });
-//   }
-// };
-
-// /* =====================================================
-//    DASHBOARD
-//    ===================================================== */
-// export const getDashboardData = async (req, res) => {
-//   try {
-//     const bookings = await Booking.find({ isPaid: true }).lean();
-//     const activeShows = await Show.find({
-//       showDateTime: { $gte: new Date() },
-//       isActive: true,
-//     })
-//       .populate("movie")
-//       .lean();
-
-//     const totalUser = await User.countDocuments();
-
-//     res.json({
-//       success: true,
-//       dashboardData: {
-//         totalBookings: bookings.length,
-//         totalRevenue: bookings.reduce(
-//           (sum, b) => sum + Number(b.amount || 0),
-//           0
-//         ),
-//         activeShows: activeShows.filter((s) => s.movie),
-//         totalUser,
-//       },
-//     });
-//   } catch (err) {
-//     res.status(500).json({ success: false });
-//   }
-// };
-
-// /* =====================================================
-//    ADD SHOW  ✅ (THIS WAS MISSING)
-//    ===================================================== */
-// export const addShow = async (req, res) => {
-//   try {
-//     const { movie, showDateTimes, showPrice } = req.body;
-
-//     if (
-//       !movie?.id ||
-//       !Array.isArray(showDateTimes) ||
-//       showDateTimes.length === 0 ||
-//       !showPrice
-//     ) {
-//       return res.status(400).json({ success: false });
-//     }
-
-//     let savedMovie = await Movie.findOne({ tmdbId: movie.id });
-
-//     if (!savedMovie) {
-//       savedMovie = await Movie.create({
-//         tmdbId: movie.id,
-//         title: movie.title || "Untitled",
-//         overview: movie.overview || "",
-//         poster_path: movie.poster_path || "",
-//         backdrop_path: movie.backdrop_path || "",
-//         release_date: movie.release_date || "",
-//         vote_average: movie.vote_average || 0,
-//         vote_count: movie.vote_count || 0,
-//       });
-//     }
-
-//     const shows = showDateTimes.map((dt) => ({
-//       movie: savedMovie._id,
-//       showDateTime: new Date(dt),
-//       showPrice: Number(showPrice),
-//       isActive: true,
-//     }));
-
-//     await Show.insertMany(shows);
-
-//     res.json({ success: true });
-//   } catch (err) {
-//     res.status(500).json({ success: false });
-//   }
-// };
-
-// /* =====================================================
-//    ALL SHOWS
-//    ===================================================== */
-// export const getAllShows = async (req, res) => {
-//   try {
-//     const shows = await Show.find().populate("movie");
-//     res.json({ success: true, shows });
-//   } catch {
-//     res.status(500).json({ success: false });
-//   }
-// };
-
-// /* =====================================================
-//    ALL BOOKINGS
-//    ===================================================== */
-// export const getAllBookings = async (req, res) => {
-//   try {
-//     const bookings = await Booking.find({ isPaid: true })
-//       .populate({
-//         path: "show",
-//         populate: { path: "movie" },
-//       })
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     // 🔥 Attach userId safely for frontend
-//     const formatted = bookings.map((b) => ({
-//       ...b,
-//       user: { name: b.user }, // show Clerk userId as name
-//     }));
-
-//     res.json({
-//       success: true,
-//       bookings: formatted,
-//     });
-//   } catch (error) {
-//     console.error("ADMIN BOOKINGS ERROR:", error.message);
-//     res.status(500).json({
-//       success: false,
-//       bookings: [],
-//     });
-//   }
-// };
 import connectDB from "../configs/db.js";
 
 import Booking from "../models/Booking.js";
@@ -934,11 +6,10 @@ import User from "../models/User.js";
 import Movie from "../models/Movie.js";
 
 /* =====================================================
-   ADMIN CHECK (FORCED TRUE – VERCEL SAFE)
+   ADMIN CHECK (FOR PROJECT – FORCE TRUE)
    ===================================================== */
 export const isAdmin = async (req, res) => {
-  await connectDB(); // ✅ REQUIRED FOR VERCEL
-
+  await connectDB();
   return res.json({
     success: true,
     isAdmin: true,
@@ -946,24 +17,25 @@ export const isAdmin = async (req, res) => {
 };
 
 /* =====================================================
-   DASHBOARD
+   DASHBOARD DATA (NO TIME FILTER – FIXED)
    ===================================================== */
 export const getDashboardData = async (req, res) => {
   try {
-    await connectDB(); // ✅ REQUIRED FOR VERCEL
+    await connectDB();
 
+    // ✅ Paid bookings
     const bookings = await Booking.find({ isPaid: true }).lean();
 
-    const activeShows = await Show.find({
-      isActive: true,
-    })
+    // ✅ ALL shows (past + future)
+    const shows = await Show.find({ isActive: true })
       .populate("movie")
       .sort({ showDateTime: 1 })
       .lean();
 
+    // ✅ Users count
     const totalUser = await User.countDocuments();
 
-    res.json({
+    return res.json({
       success: true,
       dashboardData: {
         totalBookings: bookings.length,
@@ -971,13 +43,13 @@ export const getDashboardData = async (req, res) => {
           (sum, b) => sum + Number(b.amount || 0),
           0
         ),
-        activeShows: activeShows.filter((s) => s.movie),
+        activeShows: shows.filter((s) => s.movie),
         totalUser,
       },
     });
-  } catch (err) {
-    console.error("DASHBOARD ERROR:", err);
-    res.status(500).json({ success: false });
+  } catch (error) {
+    console.error("DASHBOARD ERROR:", error);
+    return res.status(500).json({ success: false });
   }
 };
 
@@ -986,7 +58,7 @@ export const getDashboardData = async (req, res) => {
    ===================================================== */
 export const addShow = async (req, res) => {
   try {
-    await connectDB(); // ✅ REQUIRED FOR VERCEL
+    await connectDB();
 
     const { movie, showDateTimes, showPrice } = req.body;
 
@@ -1023,10 +95,10 @@ export const addShow = async (req, res) => {
 
     await Show.insertMany(shows);
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("ADD SHOW ERROR:", err);
-    res.status(500).json({ success: false });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("ADD SHOW ERROR:", error);
+    return res.status(500).json({ success: false });
   }
 };
 
@@ -1035,13 +107,13 @@ export const addShow = async (req, res) => {
    ===================================================== */
 export const getAllShows = async (req, res) => {
   try {
-    await connectDB(); // ✅ REQUIRED FOR VERCEL
+    await connectDB();
 
     const shows = await Show.find().populate("movie");
-    res.json({ success: true, shows });
-  } catch (err) {
-    console.error("GET ALL SHOWS ERROR:", err);
-    res.status(500).json({ success: false });
+    return res.json({ success: true, shows });
+  } catch (error) {
+    console.error("GET ALL SHOWS ERROR:", error);
+    return res.status(500).json({ success: false });
   }
 };
 
@@ -1050,7 +122,7 @@ export const getAllShows = async (req, res) => {
    ===================================================== */
 export const getAllBookings = async (req, res) => {
   try {
-    await connectDB(); // ✅ REQUIRED FOR VERCEL
+    await connectDB();
 
     const bookings = await Booking.find({ isPaid: true })
       .populate({
@@ -1060,18 +132,13 @@ export const getAllBookings = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const formatted = bookings.map((b) => ({
-      ...b,
-      user: { name: b.user },
-    }));
-
-    res.json({
+    return res.json({
       success: true,
-      bookings: formatted,
+      bookings,
     });
   } catch (error) {
     console.error("GET BOOKINGS ERROR:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       bookings: [],
     });
