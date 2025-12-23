@@ -704,12 +704,7 @@ import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import Stripe from "stripe";
 
-const getStripe = () => {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error("STRIPE_SECRET_KEY missing");
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
-};
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 /* ===== GET OCCUPIED SEATS ===== */
 export const getOccupiedSeats = async (req, res) => {
@@ -729,18 +724,25 @@ export const getOccupiedSeats = async (req, res) => {
 /* ===== CREATE BOOKING ===== */
 export const createBooking = async (req, res) => {
   try {
-    const userId = req.headers["x-clerk-user-id"];
-    if (!userId) return res.status(401).json({ success: false });
+    // ✅ CORRECT CLERK USER ID
+    const { userId } = req.auth;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const { showId, selectedSeats } = req.body;
     const origin = req.headers.origin;
 
     const show = await Show.findById(showId).populate("movie");
-    if (!show || !show.movie) return res.json({ success: false });
+    if (!show || !show.movie) {
+      return res.json({ success: false, message: "Show not found" });
+    }
 
+    // seat check
     for (const seat of selectedSeats) {
       if (show.occupiedSeats?.[seat]) {
-        return res.json({ success: false, message: "Seat booked" });
+        return res.json({ success: false, message: "Seat already booked" });
       }
     }
 
@@ -758,8 +760,7 @@ export const createBooking = async (req, res) => {
     show.markModified("occupiedSeats");
     await show.save();
 
-    const stripe = getStripe();
-
+    // 🔥 STRIPE SESSION
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -783,7 +784,7 @@ export const createBooking = async (req, res) => {
 
     res.json({ success: true, url: session.url });
   } catch (err) {
-    console.error(err);
+    console.error("BOOKING ERROR:", err);
     res.status(500).json({ success: false });
   }
 };

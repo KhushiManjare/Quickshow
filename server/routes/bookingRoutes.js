@@ -11,6 +11,7 @@
 
 // export default bookingRouter;
 import express from "express";
+import { requireAuth } from "@clerk/express";
 import {
   createBooking,
   getOccupiedSeats,
@@ -18,9 +19,10 @@ import {
 
 const bookingRouter = express.Router();
 
-bookingRouter.post("/create", createBooking);
+// 🔐 PROTECT CREATE BOOKING
+bookingRouter.post("/create", requireAuth(), createBooking);
+
+// ❌ seats API can be public
 bookingRouter.get("/seats/:showId", getOccupiedSeats);
 
 export default bookingRouter;
-
-
