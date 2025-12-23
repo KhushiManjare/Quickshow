@@ -399,12 +399,19 @@ app.post(
 app.use(
   cors({
     origin: [
-      "https://quickshow-ceq6.vercel.app", // frontend
-      "http://localhost:5173",             // local dev
+      "https://quickshow-ceq6.vercel.app",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-clerk-user-id",
     ],
     credentials: true,
   })
 );
+
 
 app.use(express.json());
 app.use(clerkMiddleware());
