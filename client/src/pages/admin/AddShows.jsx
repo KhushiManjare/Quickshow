@@ -1,3 +1,146 @@
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import { useAppContext } from "../../context/AppContext";
+// import toast from "react-hot-toast";
+
+// const AddShows = () => {
+//   const { getToken, image_base_url, refreshDashboard } = useAppContext();
+
+//   const [movies, setMovies] = useState([]);
+//   const [selectedMovie, setSelectedMovie] = useState(null);
+//   const [showPrice, setShowPrice] = useState("");
+//   const [dateTimeInput, setDateTimeInput] = useState("");
+//   const [showDateTimes, setShowDateTimes] = useState([]);
+
+//   /* ================= FETCH MOVIES ================= */
+//   const fetchMovies = async () => {
+//     try {
+//       const { data } = await axios.get("/api/show/now-playing");
+//       if (data?.success) {
+//         setMovies(data.movies);
+//       } else {
+//         toast.error("No movies found");
+//       }
+//     } catch (error) {
+//       console.error(error);
+//       toast.error("Failed to load movies");
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchMovies();
+//   }, []);
+
+//   /* ================= ADD DATE TIME ================= */
+//   const addDateTime = () => {
+//     if (!dateTimeInput) return;
+//     setShowDateTimes((prev) => [...prev, dateTimeInput]);
+//     setDateTimeInput("");
+//   };
+
+//   /* ================= ADD SHOW ================= */
+//   const addShow = async () => {
+//     if (!selectedMovie || !showPrice || showDateTimes.length === 0) {
+//       return toast.error("Fill all fields");
+//     }
+
+//     try {
+//       const token = await getToken();
+
+//       const { data } = await axios.post(
+//         "/api/admin/add-show",
+//         {
+//           movie: selectedMovie,
+//           showPrice,
+//           showDateTimes,
+//         },
+//         {
+//           headers: { Authorization: `Bearer ${token}` },
+//         }
+//       );
+
+//       if (data?.success) {
+//         toast.success("Show added successfully");
+
+//         console.log("🔥 refreshDashboard called");
+// refreshDashboard();
+
+//         setSelectedMovie(null);
+//         setShowPrice("");
+//         setShowDateTimes([]);
+//       } else {
+//         toast.error(data?.message || "Failed to add show");
+//       }
+//     } catch (error) {
+//       console.error(error);
+//       toast.error("Failed to add show");
+//     }
+//   };
+
+//   return (
+//     <div className="p-6">
+//       <h1 className="text-xl font-semibold mb-6">Add Shows</h1>
+
+//       {/* MOVIES GRID */}
+//       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+//         {movies.map((movie) => (
+//           <div
+//             key={movie.id}
+//             onClick={() => setSelectedMovie(movie)}
+//             className={`cursor-pointer rounded-xl overflow-hidden border-2 ${
+//               selectedMovie?.id === movie.id
+//                 ? "border-green-500"
+//                 : "border-transparent"
+//             }`}
+//           >
+//             <img
+//               src={image_base_url + movie.poster_path}
+//               alt={movie.title}
+//               className="w-full h-72 object-cover"
+//             />
+//             <p className="text-center mt-2 text-sm">{movie.title}</p>
+//           </div>
+//         ))}
+//       </div>
+
+//       {/* PRICE */}
+//       <input
+//         type="number"
+//         placeholder="Show Price"
+//         value={showPrice}
+//         onChange={(e) => setShowPrice(e.target.value)}
+//         className="mt-6 p-2 border rounded w-60 text-black"
+//       />
+
+//       {/* DATE TIME */}
+//       <div className="flex gap-3 mt-4 items-center">
+//         <input
+//           type="datetime-local"
+//           value={dateTimeInput}
+//           onChange={(e) => setDateTimeInput(e.target.value)}
+//           className="p-2 border  bg-white rounded w-72 text-black"
+//         />
+
+//         <button
+//           onClick={addDateTime}
+//           className="px-4 py-2 bg-white text-black rounded"
+//         >
+//           Add
+//         </button>
+//       </div>
+
+//       {/* ADD SHOW */}
+//       <button
+//         onClick={addShow}
+//         className="mt-6 px-6 py-2 bg-green-600 text-white rounded"
+//       >
+//         Add Show
+//       </button>
+//     </div>
+//   );
+// };
+
+// export default AddShows;
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAppContext } from "../../context/AppContext";
@@ -11,18 +154,20 @@ const AddShows = () => {
   const [showPrice, setShowPrice] = useState("");
   const [dateTimeInput, setDateTimeInput] = useState("");
   const [showDateTimes, setShowDateTimes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   /* ================= FETCH MOVIES ================= */
   const fetchMovies = async () => {
     try {
       const { data } = await axios.get("/api/show/now-playing");
-      if (data?.success) {
+      if (data?.success && Array.isArray(data.movies)) {
         setMovies(data.movies);
       } else {
+        setMovies([]);
         toast.error("No movies found");
       }
     } catch (error) {
-      console.error(error);
+      console.error("FETCH MOVIES ERROR:", error);
       toast.error("Failed to load movies");
     }
   };
@@ -33,27 +178,54 @@ const AddShows = () => {
 
   /* ================= ADD DATE TIME ================= */
   const addDateTime = () => {
-    if (!dateTimeInput) return;
+    if (!dateTimeInput) {
+      toast.error("Select date & time");
+      return;
+    }
+
+    if (showDateTimes.includes(dateTimeInput)) {
+      toast.error("This show time is already added");
+      return;
+    }
+
     setShowDateTimes((prev) => [...prev, dateTimeInput]);
     setDateTimeInput("");
   };
 
   /* ================= ADD SHOW ================= */
   const addShow = async () => {
-    if (!selectedMovie || !showPrice || showDateTimes.length === 0) {
-      return toast.error("Fill all fields");
+    if (!selectedMovie) {
+      return toast.error("Select a movie");
+    }
+
+    if (!showPrice || Number(showPrice) <= 0) {
+      return toast.error("Enter valid show price");
+    }
+
+    if (showDateTimes.length === 0) {
+      return toast.error("Add at least one show time");
     }
 
     try {
+      setLoading(true);
+
       const token = await getToken();
+      if (!token) {
+        toast.error("Authentication failed");
+        return;
+      }
+
+      const payload = {
+        movie: selectedMovie,          // TMDB object
+        showPrice: Number(showPrice),
+        showDateTimes: [...showDateTimes],
+      };
+
+      console.log("🔥 ADD SHOW PAYLOAD:", payload);
 
       const { data } = await axios.post(
         "/api/admin/add-show",
-        {
-          movie: selectedMovie,
-          showPrice,
-          showDateTimes,
-        },
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -63,8 +235,9 @@ const AddShows = () => {
         toast.success("Show added successfully");
 
         console.log("🔥 refreshDashboard called");
-refreshDashboard();
+        refreshDashboard(); // ✅ THIS ALWAYS FIRES
 
+        // reset state
         setSelectedMovie(null);
         setShowPrice("");
         setShowDateTimes([]);
@@ -72,8 +245,10 @@ refreshDashboard();
         toast.error(data?.message || "Failed to add show");
       }
     } catch (error) {
-      console.error(error);
+      console.error("ADD SHOW ERROR:", error);
       toast.error("Failed to add show");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,7 +293,7 @@ refreshDashboard();
           type="datetime-local"
           value={dateTimeInput}
           onChange={(e) => setDateTimeInput(e.target.value)}
-          className="p-2 border  bg-white rounded w-72 text-black"
+          className="p-2 border bg-white rounded w-72 text-black"
         />
 
         <button
@@ -129,12 +304,22 @@ refreshDashboard();
         </button>
       </div>
 
-      {/* ADD SHOW */}
+      {/* SHOW TIMES PREVIEW */}
+      {showDateTimes.length > 0 && (
+        <ul className="mt-3 text-sm text-gray-300">
+          {showDateTimes.map((dt, i) => (
+            <li key={i}>• {dt}</li>
+          ))}
+        </ul>
+      )}
+
+      {/* ADD SHOW BUTTON */}
       <button
         onClick={addShow}
-        className="mt-6 px-6 py-2 bg-green-600 text-white rounded"
+        disabled={loading}
+        className="mt-6 px-6 py-2 bg-green-600 text-white rounded disabled:opacity-60"
       >
-        Add Show
+        {loading ? "Adding..." : "Add Show"}
       </button>
     </div>
   );
