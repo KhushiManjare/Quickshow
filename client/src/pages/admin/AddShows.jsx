@@ -458,11 +458,12 @@ const AddShows = () => {
   className="
     mt-6 p-3 w-60
     rounded-md
-    bg-white text-black
-    border border-gray-400
-    focus:outline-none focus:border-red-500
-  "
-/>
+    bg-transparent text-white
+    border-2 border-gray-400
+    placeholder-gray-300
+    focus:outline-none
+    focus:ring-0
+    focus:border-red-800 "/>
 
 {/* DATE TIME */}
 <div className="flex gap-3 mt-4 items-center">
@@ -473,22 +474,20 @@ const AddShows = () => {
     className="
       p-3 w-72
       rounded-md
-      bg-white text-black
-      border border-gray-400
-      focus:outline-none focus:border-red-500
-    "
-  />
+      bg-transparent text-white
+      border-2 border-gray-400
+      focus:outline-none
+      focus:ring-0
+      focus:border-red-800" />
 
   <button
     onClick={addDateTime}
     className="
       px-4 py-2
-      bg-white text-black
-      border border-gray-400
       rounded-md
-      hover:bg-gray-100
-    "
-  >
+      bg-red-800 text-white
+      hover:bg-red-900
+      transition " >
     Add
   </button>
 </div>
@@ -507,7 +506,7 @@ const AddShows = () => {
       <button
         onClick={addShow}
         disabled={loading}
-        className="mt-6 px-6 py-2 bg-green-600 text-white rounded disabled:opacity-60"
+        className="mt-6 px-6 py-2 bg-red-600 text-black rounded disabled:opacity-60"
       >
         {loading ? "Adding..." : "Add Show"}
       </button>
