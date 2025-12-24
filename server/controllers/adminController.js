@@ -9,11 +9,40 @@ import Movie from "../models/Movie.js";
    ADMIN CHECK (FOR PROJECT – FORCE TRUE)
    ===================================================== */
 export const isAdmin = async (req, res) => {
-  await connectDB();
-  return res.json({
-    success: true,
-    isAdmin: true,
-  });
+  try {
+    const { userId } = req.auth;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        isAdmin: false,
+      });
+    }
+
+    // fetch user from Clerk
+    const user = await clerkClient.users.getUser(userId);
+
+    const userEmail =
+      user.emailAddresses?.[0]?.emailAddress?.toLowerCase();
+
+    // allowed admin emails from env
+    const adminEmails = process.env.ADMIN_EMAILS
+      ?.split(",")
+      .map((e) => e.trim().toLowerCase());
+
+    const isAdmin = adminEmails?.includes(userEmail);
+
+    return res.json({
+      success: true,
+      isAdmin,
+    });
+  } catch (error) {
+    console.error("IS ADMIN ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      isAdmin: false,
+    });
+  }
 };
 
 /* =====================================================
