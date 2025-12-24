@@ -460,7 +460,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://quickshow-frontend-steel.vercel.app",
+      "https://quickshow-frontendd.vercel.app",
 
     ],
     credentials: true,
