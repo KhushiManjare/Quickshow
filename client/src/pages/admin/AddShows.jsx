@@ -435,7 +435,7 @@ const AddShows = () => {
             onClick={() => setSelectedMovie(movie)}
             className={`cursor-pointer rounded-xl overflow-hidden border-2 ${
               selectedMovie?.id === movie.id
-                ? "border-green-500"
+                ? "border-red-800"
                 : "border-transparent"
             }`}
           >
@@ -451,29 +451,48 @@ const AddShows = () => {
 
       {/* PRICE */}
       <input
-        type="number"
-        placeholder="Show Price"
-        value={showPrice}
-        onChange={(e) => setShowPrice(e.target.value)}
-        className="mt-6 p-2 border rounded w-60 text-black"
-      />
+  type="number"
+  placeholder="Show Price"
+  value={showPrice}
+  onChange={(e) => setShowPrice(e.target.value)}
+  className="
+    mt-6 p-3 w-60
+    rounded-md
+    bg-white text-black
+    border border-gray-400
+    focus:outline-none focus:border-red-500
+  "
+/>
 
-      {/* DATE TIME */}
-      <div className="flex gap-3 mt-4 items-center">
-        <input
-          type="datetime-local"
-          value={dateTimeInput}
-          onChange={(e) => setDateTimeInput(e.target.value)}
-          className="p-2 border bg-white rounded w-72 text-black"
-        />
+{/* DATE TIME */}
+<div className="flex gap-3 mt-4 items-center">
+  <input
+    type="datetime-local"
+    value={dateTimeInput}
+    onChange={(e) => setDateTimeInput(e.target.value)}
+    className="
+      p-3 w-72
+      rounded-md
+      bg-white text-black
+      border border-gray-400
+      focus:outline-none focus:border-red-500
+    "
+  />
 
-        <button
-          onClick={addDateTime}
-          className="px-4 py-2 bg-white text-black rounded"
-        >
-          Add
-        </button>
-      </div>
+  <button
+    onClick={addDateTime}
+    className="
+      px-4 py-2
+      bg-white text-black
+      border border-gray-400
+      rounded-md
+      hover:bg-gray-100
+    "
+  >
+    Add
+  </button>
+</div>
+
 
       {/* SHOW TIMES */}
       {showDateTimes.length > 0 && (

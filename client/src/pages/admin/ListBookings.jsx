@@ -73,6 +73,121 @@
 // };
 
 // export default ListBookings;
+// import { useEffect, useState } from "react";
+// import Loading from "../../components/Loading";
+// import Title from "../../components/admin/Title";
+// import { dateFormat } from "../../lib/dateFormat";
+// import { useAppContext } from "../../context/AppContext";
+
+// const ListBookings = () => {
+//   const currency = import.meta.env.VITE_CURRENCY || "₹";
+//   const { axios, getToken, user } = useAppContext();
+
+//   const [bookings, setBookings] = useState([]);
+//   const [isLoading, setIsLoading] = useState(true);
+
+//   const getAllBookings = async () => {
+//     try {
+//       const token = await getToken();
+//       if (!token) return;
+
+//       const { data } = await axios.get("/api/admin/bookings", {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       if (data?.success && Array.isArray(data.bookings)) {
+//         setBookings(data.bookings);
+//       } else {
+//         setBookings([]);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching bookings:", error.message);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   // 🔁 AUTO REFRESH BOOKINGS
+//   useEffect(() => {
+//     if (!user) return;
+
+//     getAllBookings(); // initial load
+
+//     const interval = setInterval(() => {
+//       getAllBookings();
+//     }, 5000); // refresh every 5 seconds
+
+//     return () => clearInterval(interval);
+//   }, [user]);
+
+//   if (isLoading) return <Loading />;
+
+//   return (
+//     <>
+//       <Title text1="List" text2="Bookings" />
+
+//       <div className="max-w-5xl mt-6 overflow-x-auto">
+//         <table className="w-full border-collapse rounded-md overflow-hidden text-nowrap">
+//           <thead>
+//             <tr className="bg-primary/20 text-left text-white">
+//               <th className="p-2 font-medium pl-5">User Name</th>
+//               <th className="p-2 font-medium">Movie Name</th>
+//               <th className="p-2 font-medium">Show Time</th>
+//               <th className="p-2 font-medium">Seats</th>
+//               <th className="p-2 font-medium">Amount</th>
+//             </tr>
+//           </thead>
+
+//           <tbody className="text-sm font-light">
+//             {bookings.length > 0 ? (
+//               bookings.map((item, index) => (
+//                 <tr
+//                   key={item._id || index}
+//                   className="border-b border-primary/20 bg-primary/5 even:bg-primary/10"
+//                 >
+//                   <td className="p-2 pl-5 min-w-40">
+//                     {item.user?.name || "N/A"}
+//                   </td>
+
+//                   <td className="p-2">
+//                     {item.show?.movie?.title || "N/A"}
+//                   </td>
+
+//                   <td className="p-2">
+//                     {item.show?.showDateTime
+//                       ? dateFormat(item.show.showDateTime)
+//                       : "N/A"}
+//                   </td>
+
+//                   <td className="p-2">
+//                     {item.bookedSeats
+//                       ? Object.values(item.bookedSeats).join(", ")
+//                       : "N/A"}
+//                   </td>
+
+//                   <td className="p-2">
+//                     {currency} {item.amount || 0}
+//                   </td>
+//                 </tr>
+//               ))
+//             ) : (
+//               <tr>
+//                 <td
+//                   colSpan="5"
+//                   className="text-center text-gray-400 py-6"
+//                 >
+//                   No bookings found
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default ListBookings;
 import { useEffect, useState } from "react";
 import Loading from "../../components/Loading";
 import Title from "../../components/admin/Title";
@@ -107,16 +222,12 @@ const ListBookings = () => {
     }
   };
 
-  // 🔁 AUTO REFRESH BOOKINGS
   useEffect(() => {
     if (!user) return;
 
-    getAllBookings(); // initial load
+    getAllBookings();
 
-    const interval = setInterval(() => {
-      getAllBookings();
-    }, 5000); // refresh every 5 seconds
-
+    const interval = setInterval(getAllBookings, 5000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -130,8 +241,8 @@ const ListBookings = () => {
         <table className="w-full border-collapse rounded-md overflow-hidden text-nowrap">
           <thead>
             <tr className="bg-primary/20 text-left text-white">
-              <th className="p-2 font-medium pl-5">User Name</th>
-              <th className="p-2 font-medium">Movie Name</th>
+              <th className="p-2 font-medium pl-5">User</th>
+              <th className="p-2 font-medium">Movie</th>
               <th className="p-2 font-medium">Show Time</th>
               <th className="p-2 font-medium">Seats</th>
               <th className="p-2 font-medium">Amount</th>
@@ -145,26 +256,31 @@ const ListBookings = () => {
                   key={item._id || index}
                   className="border-b border-primary/20 bg-primary/5 even:bg-primary/10"
                 >
+                  {/* USER */}
                   <td className="p-2 pl-5 min-w-40">
-                    {item.user?.name || "N/A"}
+                    {item.user || "Guest"}
                   </td>
 
+                  {/* MOVIE */}
                   <td className="p-2">
-                    {item.show?.movie?.title || "N/A"}
+                    {item.show?.movie?.title || "Movie Removed"}
                   </td>
 
+                  {/* SHOW TIME */}
                   <td className="p-2">
-                    {item.show?.showDateTime
-                      ? dateFormat(item.show.showDateTime)
+                    {item.show?.showTime
+                      ? dateFormat(item.show.showTime)
+                      : "Time N/A"}
+                  </td>
+
+                  {/* SEATS */}
+                  <td className="p-2">
+                    {Array.isArray(item.seats)
+                      ? item.seats.join(", ")
                       : "N/A"}
                   </td>
 
-                  <td className="p-2">
-                    {item.bookedSeats
-                      ? Object.values(item.bookedSeats).join(", ")
-                      : "N/A"}
-                  </td>
-
+                  {/* AMOUNT */}
                   <td className="p-2">
                     {currency} {item.amount || 0}
                   </td>
@@ -172,10 +288,7 @@ const ListBookings = () => {
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="5"
-                  className="text-center text-gray-400 py-6"
-                >
+                <td colSpan="5" className="text-center text-gray-400 py-6">
                   No bookings found
                 </td>
               </tr>
